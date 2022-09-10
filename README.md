@@ -1,2 +1,0 @@
-# CP
-Algorithms and structures
