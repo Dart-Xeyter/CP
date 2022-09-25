@@ -28,46 +28,6 @@ int push(int vertex, int x, int y) {
     return -1;
 }
 
-int BFS(int x, int y) {
-    int n = d.size();
-    vector<int> dist(n, INF);
-    queue<int> a;
-    a.push(x);
-    dist[x] = 0;
-    while (!a.empty()) {
-        int q = a.front();
-        a.pop();
-        if (q == y) {
-            break;
-        }
-        for (int q2 : gf[q]) {
-            Edge &q1 = e[q2];
-            if (dist[q1.y] == INF && q1.c-q1.f > 0) {
-                a.push(q1.y);
-                dist[q1.y] = dist[q]+1;
-            }
-        }
-    }
-    vector<vector<int>> gf_const = gf;
-    gf.assign(n, {});
-    for (int q = 0; q < e.size(); q++) {
-        if (dist[e[q].x]+1 == dist[e[q].y]) {
-            gf[e[q].x].push_back(q);
-        }
-    }
-    int ans = -(dist[y] == INF);
-    while (true) {
-        was.assign(n, false);
-        int x1 = push(x, INF, y);
-        if (x1 == -1) {
-            break;
-        }
-        ans += x1;
-    }
-    gf = gf_const;
-    return ans;
-}
-
 int flow(int x, int y) {
     int n = d.size();
     gf.assign(n, {}), e = {};
@@ -82,7 +42,7 @@ int flow(int x, int y) {
     int ans = 0;
     while (true) {
         was.assign(n, false);
-        int x1 = BFS(x, y);
+        int x1 = push(x, INF, y);
         if (x1 == -1) {
             break;
         }
