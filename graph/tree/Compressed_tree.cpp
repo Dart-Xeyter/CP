@@ -57,3 +57,4 @@ int make_compressed_tree(vector<int> &a) {
     }
     return a[0];
 }
+

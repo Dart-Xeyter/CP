@@ -75,3 +75,4 @@ bool on_ray(Pt x, Pt y, Pt z) {
 bool on_seg(Pt x, Pt y, Pt z) {
     return on_ray(x, y, z) && on_ray(y, x, z);
 }
+

@@ -62,3 +62,4 @@ int S_2(vector<Pt> a) {
     }
     return ans;
 }
+

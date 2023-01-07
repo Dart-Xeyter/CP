@@ -15,3 +15,4 @@ vector<int> z_func(string &a) {
     }
     return z;
 }
+

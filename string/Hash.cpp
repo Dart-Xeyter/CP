@@ -29,3 +29,4 @@ struct Hash1 {
         return ((hashs[r]-hashs[l]*deg[r-l]) % C+C) % C;
     }
 };
+

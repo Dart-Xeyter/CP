@@ -192,3 +192,4 @@ inline void writeDouble( double x, int output_len ) {
 	t = std::min(9, (int)(x + 0.5));
 	writeChar('0' + t);
 }
+

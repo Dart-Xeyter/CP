@@ -123,3 +123,4 @@ bool ray_seg(Pt a, Pt b, Pt x, Pt y) {
 bool seg_seg(Pt a, Pt b, Pt x, Pt y) {
     return ray_seg(a, b, x, y) && ray_seg(b, a, x, y);
 }
+

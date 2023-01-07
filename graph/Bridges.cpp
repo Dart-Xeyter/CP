@@ -48,3 +48,4 @@ void cond(int vertex, int now) {
         }
     }
 }
+

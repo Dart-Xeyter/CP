@@ -40,3 +40,4 @@ void centroid_decomposition(int vertex) {
         }
     }
 }
+

@@ -52,3 +52,4 @@ struct Merge_Sort_Tree{
         return ans(l, m, l1, r1, 2*q, x)+ans(m, r, l1, r1, 2*q+1, x);
     }
 };
+

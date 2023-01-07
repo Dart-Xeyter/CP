@@ -36,3 +36,4 @@ struct DO {
         return min(ans(l, m, l1, r1, 2*q), ans(m, r, l1, r1, 2*q+1));
     }
 };
+

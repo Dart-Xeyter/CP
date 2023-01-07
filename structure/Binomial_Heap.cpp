@@ -125,3 +125,4 @@ Binomial_Heap* merge(Binomial_Heap* &tree1, Binomial_Heap* &tree2) {
     }
     return tree2;
 }
+

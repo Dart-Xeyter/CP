@@ -51,3 +51,4 @@ void DFS(int vertex, int parent, int h) {
     }
     tout[vertex] = time1;
 }
+

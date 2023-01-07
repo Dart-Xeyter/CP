@@ -77,3 +77,4 @@ struct Mo {
         return answer;
     }
 };
+

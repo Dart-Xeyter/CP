@@ -28,3 +28,4 @@ struct Sparse {
         return min(up[l][w], up[r-(1 << w)][w]);
     }
 };
+

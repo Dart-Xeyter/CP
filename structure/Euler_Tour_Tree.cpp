@@ -119,3 +119,4 @@ pair<Node*, Node*> cut(int x, Node* tree) {
     for_vertex[x] = {nullptr, nullptr};
     return {merge(trees1.first, trees.second), trees1.second};
 }
+

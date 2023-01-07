@@ -23,3 +23,4 @@ vector<int> Dijkstra(int vertex) {
     }
     return dist;
 }
+

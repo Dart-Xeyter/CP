@@ -47,3 +47,4 @@ void Aho_Corasick() {
         num_term[x] = num_term[suf_link[x]]+term[x].size();
     }
 }
+

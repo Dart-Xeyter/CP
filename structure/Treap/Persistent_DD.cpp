@@ -77,3 +77,4 @@ pair<Node*, bool> change(Node* tree, int pos) {
     will->x = 1-will->x;
     return {merge(merge(trees2.first, will), trees1.second), flag};
 }
+

@@ -28,3 +28,4 @@ vector<int> gen_dividers(vector<p> &factor) {
     }
     return dividers;
 }
+

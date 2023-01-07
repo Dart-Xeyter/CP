@@ -34,3 +34,4 @@ vector<int> annealing(int n) {
     }
     return a;
 }
+
