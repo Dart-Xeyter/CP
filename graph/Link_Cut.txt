@@ -4,8 +4,8 @@ struct Node {
     Node *left, *right, *parent;
     Node* link;
 
-    Node(int x1) : x(x1), type(-1), size(1), rev(false),
-    left(nullptr), right(nullptr), parent(nullptr), link(nullptr) {}
+    Node(int x1): x(x1), type(-1), size(1), rev(false),
+        left(nullptr), right(nullptr), parent(nullptr), link(nullptr) {}
 };
 
 void update(Node* tree) {

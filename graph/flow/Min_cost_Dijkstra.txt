@@ -1,7 +1,8 @@
 struct Edge {
     int x, y, c, t, f;
 
-    Edge(int x1, int y1, int c1, int t1, int f1 = 0) : x(x1), y(y1), c(c1), t(t1), f(f1) {}
+    Edge(int x1, int y1, int c1, int t1, int f1 = 0):
+        x(x1), y(y1), c(c1), t(t1), f(f1) {}
 };
 
 vector<vector<Edge>> d;

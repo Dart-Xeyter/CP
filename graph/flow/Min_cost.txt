@@ -1,7 +1,8 @@
 struct Edge {
     int x, y, c, t, f;
 
-    Edge(int x1, int y1, int c1, int t1, int f1 = 0) : x(x1), y(y1), c(c1), t(t1), f(f1) {}
+    Edge(int x1, int y1, int c1, int t1, int f1 = 0):
+        x(x1), y(y1), c(c1), t(t1), f(f1) {}
 };
 
 vector<vector<Edge>> d;
@@ -35,7 +36,8 @@ pair<bool, int> Ford_Bellman(int x, int y) {
             for (int q2 : gf[q]) {
                 Edge q1 = e[q2];
                 if (dist[q1.y] > dist[q1.x]+q1.t && q1.c-q1.f > 0) {
-                    dist[q1.y] = dist[q1.x]+q1.t, parent_edge[q1.y] = q2, push[q1.y] = min(push[q1.x], q1.c-q1.f);
+                    dist[q1.y] = dist[q1.x]+q1.t, parent_edge[q1.y] = q2;
+                    push[q1.y] = min(push[q1.x], q1.c-q1.f);
                     flag = true;
                 }
             }

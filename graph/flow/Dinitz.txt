@@ -1,7 +1,7 @@
 struct Edge {
     int x, y, c, f;
 
-    Edge(int x1, int y1, int c1, int f1 = 0) : x(x1), y(y1), c(c1), f(f1) {}
+    Edge(int x1, int y1, int c1, int f1 = 0): x(x1), y(y1), c(c1), f(f1) {}
 };
 
 vector<vector<Edge>> d;
@@ -19,8 +19,7 @@ int push(int vertex, int x, int y) {
         if (!was[q1.y] && q1.c-q1.f > 0) {
             int x1 = push(q1.y, min(x, q1.c-q1.f), y);
             if (x1 != -1) {
-                q1.f += x1;
-                e[q ^ 1].f -= x1;
+                q1.f += x1, e[q ^ 1].f -= x1;
                 return x1;
             }
         }
