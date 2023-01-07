@@ -3,7 +3,7 @@ long double PI = 3.14159265358979323846;
 struct Complex {
     long double x, y;
 
-    Complex(long double x1 = 0, long double y1 = 0) : x(x1), y(y1) {}
+    Complex(long double x1 = 0, long double y1 = 0): x(x1), y(y1) {}
 
     Complex operator+(Complex z) {
         return Complex(x+z.x, y+z.y);

@@ -2,7 +2,7 @@ struct Node {
     int x;
     Node *l, *r;
 
-    Node(int x1 = 0) : x(x1), l(nullptr), r(nullptr) {}
+    Node(int x1 = 0): x(x1), l(nullptr), r(nullptr) {}
 };
 
 void update(Node* tree) {

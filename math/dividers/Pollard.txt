@@ -70,7 +70,8 @@ vector<int> Pollard(int n) {
         while (true) {
             int x = randint() % n, y = x, t = 1;
             while (t == 1) {
-                x = func(x, n), y = func(func(y, n), n), t = __gcd((x >= y ? x-y : y-x), n);
+                x = func(x, n), y = func(func(y, n), n);
+                t = __gcd((x >= y ? x-y : y-x), n);
             }
             if (t != n) {
                 for_fact.push_back(t);

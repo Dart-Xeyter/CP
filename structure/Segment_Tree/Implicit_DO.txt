@@ -3,7 +3,8 @@ struct Node {
     Node *l, *r;
     int size;
 
-    Node(int left1, int right1) : left(left1), right(right1), l(nullptr), r(nullptr), size(0) {}
+    Node(int left1, int right1):
+        left(left1), right(right1), l(nullptr), r(nullptr), size(0) {}
 };
 
 void make_sons(Node* tree) {

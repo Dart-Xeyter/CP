@@ -5,7 +5,7 @@ struct Node {
     Node *l, *r;
     int size;
 
-    Node(int x1) : x(x1), y(randint()), l(nullptr), r(nullptr), size(1) {}
+    Node(int x1): x(x1), y(randint()), l(nullptr), r(nullptr), size(1) {}
 };
 
 void update(Node* tree) {

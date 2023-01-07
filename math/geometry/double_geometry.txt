@@ -4,7 +4,7 @@ const ld E = 0.00000001;
 struct Pt {
     ld x, y;
 
-    Pt(ld x1 = 0, ld y1 = 0) : x(x1), y(y1) {}
+    Pt(ld x1 = 0, ld y1 = 0): x(x1), y(y1) {}
 
     bool operator==(Pt point) {
         return x == point.x && y == point.y;
@@ -65,7 +65,7 @@ ld cross(Pt x, Pt y) {
 struct Ln {
     ld a, b, c;
 
-    Ln(ld a1 = 0, ld b1 = 0, ld c1 = 0) : a(a1), b(b1), c(c1) {}
+    Ln(ld a1 = 0, ld b1 = 0, ld c1 = 0): a(a1), b(b1), c(c1) {}
 };
 
 Ln make_line(Pt x, Pt y) {
@@ -89,7 +89,7 @@ struct Cr {
     ld x, y, r;
     Pt c;
 
-    Cr(ld x1, ld y1, ld r1) : x(x1), y(y1), r(r1), c(x, y) {}
+    Cr(ld x1, ld y1, ld r1): x(x1), y(y1), r(r1), c(x, y) {}
 
     bool operator==(Cr cir) {
         return c == cir.c && abs(r-cir.r) < E;
