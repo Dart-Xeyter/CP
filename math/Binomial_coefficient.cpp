@@ -29,3 +29,4 @@ int C_n_k(int k, int n) {
     }
     return fact[n]*rev_fact[k] % C*rev_fact[n-k] % C;
 }
+

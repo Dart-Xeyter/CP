@@ -50,3 +50,4 @@ vector<int> LCP(vector<int> &sufmas, string &s) {
     lcp.pop_back();
     return lcp;
 }
+

@@ -32,3 +32,4 @@ int find_log(int a, int b, int C) {
     }
     return -1;
 }
+

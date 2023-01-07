@@ -25,3 +25,4 @@ struct DSU {
         size[x] = -1, comp[x] = {};
     }
 };
+

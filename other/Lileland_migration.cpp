@@ -25,3 +25,4 @@ vector<int> right_migration_less(vector<int> &a) {
     }
     return right;
 }
+

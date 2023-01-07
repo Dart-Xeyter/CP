@@ -11,3 +11,4 @@ vector<int> Grice_Misra_sieve(int n) {
     }
     return lcp;
 }
+

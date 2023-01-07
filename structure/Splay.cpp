@@ -206,3 +206,4 @@ pair<Splay, Splay> split(Splay tree, int x) {
     update(tree1.root), update(tree2.root);
     return {tree1, tree2};
 }
+

@@ -96,3 +96,4 @@ vector<int> mul(vector<int> &a, vector<int> &b) {
     vector<int> c = rev_FFT(c1);
     return c;
 }
+

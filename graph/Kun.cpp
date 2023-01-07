@@ -25,3 +25,4 @@ int Kun(int n, int m) {
     }
     return ans;
 }
+

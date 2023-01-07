@@ -137,3 +137,4 @@ void to_number(vector<int> &a) {
     }
     from_norm(a);
 }
+

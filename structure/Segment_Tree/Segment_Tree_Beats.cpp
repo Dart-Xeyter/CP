@@ -70,3 +70,4 @@ struct DO {
         return ans(l, m, l1, r1, 2*q)+ans(m, r, l1, r1, 2*q+1);
     }
 };
+

@@ -27,3 +27,4 @@ int KTO(int x1, int x2, int mod1, int mod2) {
     int lcp = mod1*mod2/__gcd(mod1, mod2), x = k.first*mod1+x1;
     return (x % lcp+lcp) % lcp;
 }
+

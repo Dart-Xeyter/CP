@@ -265,3 +265,4 @@ int len(Node* tree1, Node* tree2) {
     splay(tree1);
     return tree1->size-1;
 }
+

@@ -16,3 +16,4 @@ int add(string &s, int x) {
     cost[vertex] += x;
     return vertex;
 }
+

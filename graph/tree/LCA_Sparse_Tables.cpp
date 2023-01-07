@@ -52,3 +52,4 @@ bool is_ancestor(int x, int y) {
 int LCA(int x, int y, Sparse &sparse) {
     return sparse.ans(min(tin[x], tin[y]), max(tout[x], tout[y])).second;
 }
+

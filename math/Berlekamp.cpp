@@ -49,3 +49,4 @@ vector<int> Berlekamp(vector<int> &a) {
     }
     return rec;
 }
+

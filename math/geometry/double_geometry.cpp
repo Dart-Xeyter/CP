@@ -130,3 +130,4 @@ pair<bool, Pt> O_center(Pt x, Pt y, Pt z) {
     }
     return {true, inter(perpendicular(make_line(x, y), (x+y)/2), perpendicular(make_line(x, z), (x+z)/2))};
 }
+

@@ -20,3 +20,4 @@ while True:
     if ans1 != ans2:
         exit(179)
     q2 += 1
+

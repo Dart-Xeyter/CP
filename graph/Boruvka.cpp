@@ -39,3 +39,4 @@ int Boruvka(vector<int> &a, int m) {
     }
     return ans;
 }
+

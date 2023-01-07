@@ -10,3 +10,4 @@ void make_bypass(int vertex) {
     }
     Euler.push_back(vertex);
 }
+

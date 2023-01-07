@@ -59,3 +59,4 @@ int num_x(Node* tree, int x) {
     }
     return num_x(tree->r, x)+tree->l->size;
 }
+

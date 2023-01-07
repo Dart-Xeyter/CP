@@ -78,3 +78,4 @@ void build_automation(vector<string> &a) {
     was.assign(L, false);
     build_other(0);
 }
+

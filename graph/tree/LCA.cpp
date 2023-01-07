@@ -40,3 +40,4 @@ int LCA(int x, int y) {
     }
     return up[x][0];
 }
+

@@ -45,3 +45,4 @@ int ans(Node* tree, int l, int r, int l1, int r1) {
     int m = (l+r)/2;
     return ans(tree->l, l, m, l1, r1)+ans(tree->r, m, r, l1, r1);
 }
+

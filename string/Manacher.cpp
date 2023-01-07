@@ -30,3 +30,4 @@ vector<int> Manacher(vector<int> &a1) {
     }
     return man;
 }
+

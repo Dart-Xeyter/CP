@@ -14,3 +14,4 @@ vector<int> pref_func(string &a) {
     }
     return pref;
 }
+

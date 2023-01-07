@@ -13,3 +13,4 @@ int phi(int n) {
     }
     return ans;
 }
+

@@ -115,3 +115,4 @@ int ans_way(int x, int y, DO &do_arr) {
     ans += do_arr.ans(0, do_arr.len, min(tin[x], tin[y]), max(tin[x], tin[y])+1, 1);
     return ans;
 }
+

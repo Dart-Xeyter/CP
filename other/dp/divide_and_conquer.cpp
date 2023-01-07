@@ -18,3 +18,4 @@ void make_ans(int q, int l, int r, int l1, int r1) {
     make_ans(q, l, q1, l1, opt);
     make_ans(q, q1+1, r, opt, r1);
 }
+

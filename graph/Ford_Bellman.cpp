@@ -36,3 +36,4 @@ vector<int> Ford_Bellman(int vertex) {
     }
     return dist;
 }
+
