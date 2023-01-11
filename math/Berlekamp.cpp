@@ -1,52 +1,77 @@
-const int C = 1000000007;
+const int C = 1791179179;
 
-int pow1(int x, int y, int z=C) {
+int pow1(int x, int y) {
     if (y == 0) {
         return 1;
     }
     if (y % 2 == 0) {
-        return pow1(x*x % z, y/2, z);
+        return pow1(x*x % C, y/2);
     }
-    return pow1(x, y-1, z)*x % z;
+    return pow1(x, y-1)*x % C;
 }
 
-vector<int> Berlekamp(vector<int> &a) {
-    vector<int> R_n = {1}, R_m;
-    int L_n = 0, L_m = -1, dm = 0, q1 = 0, n = a.size();
-    for (int q = 0; q < n; q++) {
-        int dn = 0;
-        for (int q2 = 0; q2 <= L_n; q2++) {
-            dn += R_n[q2]*a[q-q2] % C;
-        }
-        dn %= C;
-        if (dn != 0) {
-            vector<int> R_new;
-            int L_new;
-            if (dm == 0) {
-                R_new = vector<int>(q+2, 0), R_new[0] = 1, L_new = q+1;
-            } else {
-                R_new = R_n, L_new = max(L_n, L_m+q-q1);
-                for (int q2 = L_n; q2 < L_m+q-q1; q2++) {
-                    R_new.push_back(0);
-                }
-                for (int q2 = q-q1; q2 <= L_m+q-q1; q2++) {
-                    R_new[q2] -= R_m[q2-(q-q1)]*dn % C*pow1(dm, C-2) % C;
-                    R_new[q2] %= C;
-                }
-            }
-            if (L_n < L_new) {
-                R_m = R_n, L_m = L_n, dm = dn, q1 = q;
-            }
-            R_n = R_new, L_n = L_new;
-        }
+vector<int> Berlekamp(vector<int> &rec) {
+    int n = rec.size(), q1 = 0;
+    while (q1 < n && rec[q1] == 0) {
+        q1++;
     }
-    vector<int> rec;
-    for (int q = 1; q < R_n.size(); q++) {
-        rec.push_back((C-R_n[q]) % C);
-        if (rec.back() > C/2){
-            rec.back() -= C;
-        }
+    if (q1 == n) {
+        return {};
     }
-    return rec;
+    int t = rec[q1] % C, q2 = q1++;
+    vector<int> was, now = vector<int>(q1, 0);
+    for (; q1 < n; q1++) {
+        int d = -rec[q1] % C;
+        for (int q = 1; q <= now.size(); q++) {
+            d = (d+now[q-1]*rec[q1-q]) % C;
+        }
+        if (d == 0) {
+            continue;
+        }
+        vector<int> will = now;
+        while (will.size() < q1-q2+(int)was.size()) {
+            will.push_back(0);
+        }
+        int mul = d*pow1(t, C-2) % C;
+        will[q1-q2-1] = (will[q1-q2-1]+mul) % C;
+        for (int q = 0; q < was.size(); q++) {
+            will[q1-q2+q] = (will[q1-q2+q]-was[q]*mul) % C;
+        }
+        was = now, now = will, t = d, q2 = q1;
+    }
+    for (int& q : now) {
+        q = (q+C) % C, q -= (q > C/2)*C;
+    }
+    while (!now.empty() && now.back() == 0) {
+        now.pop_back();
+    }
+    return now;
+}
+
+int stupid(int n) {
+    //to do
+}
+
+int find_n(int n, bool flag = false) {
+    int k = 57;
+    vector<int> a = {0};
+    for (int q = 1; q < (flag ? n+1 : k); q++) {
+        a.push_back(stupid(q));
+    }
+    vector<int> rec = Berlekamp(a);
+    if (flag) {
+        for (int q : rec) {
+            cout << q << ' ';
+        }
+        cout << endl;
+    }
+    for (int q = k; q <= n; q++) {
+        a.push_back(0);
+        for (int q1 = 1; q1 <= rec.size(); q1++) {
+            a.back() += a[q-q1]*rec[q1-1] % C;
+        }
+        a.back() = (a.back() % C+C) % C;
+    }
+    return a[n];
 }
 
