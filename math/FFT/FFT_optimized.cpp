@@ -1,26 +1,7 @@
 #define ld double
+#define Complex complex<ld>
 
-struct Complex {
-    ld x, y;
-
-    Complex operator-(Complex a) {
-        return {x-a.x, y-a.y};
-    }
-
-    void operator+=(Complex a) {
-        x += a.x, y += a.y;
-    }
-
-    Complex operator*(Complex a) {
-        return {x*a.x-y*a.y, x*a.y+y*a.x};
-    }
-
-    void operator/=(int n) {
-        x /= n, y /= n;
-    }
-};
-
-const ld PI = acos(-1);
+const ld PI = acosl(-1);
 vector<vector<int>> reversed;
 vector<vector<Complex>> roots;
 
@@ -76,7 +57,7 @@ vector<Complex> to_FFT_form(const vector<int> &a, int deg) {
 vector<int> from_FFT_form(const vector<Complex> &A) {
     vector<int> a;
     for (const Complex &q : A) {
-        a.push_back(round(q.x));
+        a.push_back(round(q.real()));
     }
     while (a.size() > 1 && a.back() == 0) {
         a.pop_back();
@@ -93,6 +74,7 @@ int get_degree(int n) {
 }
 
 void FFT_preculc(int n) {
+    reversed = {}, roots = {};
     int deg = get_degree(n);
     for (int q = 0; (1 << q) <= deg; q++) {
         reversed.emplace_back();
@@ -114,6 +96,7 @@ void FFT_preculc(int n) {
 
 vector<int> mul(const vector<int> &a, const vector<int> &b) {
     int deg = get_degree(a.size()+b.size());
+    FFT_preculc(deg);
     vector<Complex> A = to_FFT_form(a, deg);
     vector<Complex> B = to_FFT_form(b, deg);
     FFT(A), FFT(B);
@@ -123,5 +106,35 @@ vector<int> mul(const vector<int> &a, const vector<int> &b) {
     }
     IFFT(C);
     return from_FFT_form(C);
+}
+
+vector<int> to_polynomial(const string &n, int digit = 2) {
+    int len = n.size();
+    vector<int> a;
+    for (int q = 0; q < len; q++) {
+        if (q == 0 || q % digit == len % digit) {
+            a.push_back(0);
+        }
+        a.back() *= 10, a.back() += n[q]-'0';
+    }
+    reverse(a.begin(), a.end());
+    return a;
+}
+
+string to_number(const vector<int> &a, int digit = 2) {
+    string n;
+    int x = 0;
+    for (int q = 0; q < a.size() || x > 0; q++) {
+        x += (q < a.size() ? a[q] : 0);
+        for (int q1 = 0; q1 < digit; q1++) {
+            n += '0'+x % 10;
+            x /= 10;
+        }
+    }
+    while (n.size() > 1 && n.back() == '0') {
+        n.pop_back();
+    }
+    reverse(n.begin(), n.end());
+    return n;
 }
 

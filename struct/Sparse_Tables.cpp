@@ -1,31 +1,29 @@
 struct Sparse {
-    vector<vector<int>> up;
-    vector<int> deg;
-    int log1 = 20;
+    vector<vector<int>> mins;
+    vector<int> logs;
 
     Sparse(vector<int> &a) {
         int n = a.size();
-        up.assign(n, vector<int>(log1)), deg.assign(n+1, 0);
-        for (int q = 2; q <= n; q++) {
-            deg[q] = deg[q/2]+1;
+        logs = {-1};
+        for (int q = 1; q <= n; q++) {
+            logs.push_back(logs[q/2]+1);
         }
+        mins.assign(n, vector<int>(logs.back()+1, INF));
         for (int q = 0; q < n; q++) {
-            up[q][0] = a[q];
+            mins[q][0] = a[q];
         }
-        for (int q = 1; q < log1; q++) {
-            int w = (1 << (q-1));
-            for (int q1 = 0; q1 < n-w; q1++) {
-                up[q1][q] = min(up[q1][q-1], up[q1+w][q-1]);
-            }
-            for (int q1 = max(0LL, n-w); q1 < n; q1++) {
-                up[q1][q] = up[q1][q-1];
+        for (int q = 1; q <= logs.back(); q++) {
+            for (int q1 = 0; q1 < n; q1++) {
+                mins[q1][q] = min(mins[q1][q-1], (q1 < n-(1 << (q-1)) ? mins[q1+(1 << (q-1))][q-1] : INF));
             }
         }
     }
 
     int ans(int l, int r) {
-        int w = deg[r-l];
-        return min(up[l][w], up[r-(1 << w)][w]);
+        if (l == r) {
+            return INF;
+        }
+        return min(mins[l][logs[r-l]], mins[r-(1 << logs[r-l])][logs[r-l]]);
     }
 };
 
