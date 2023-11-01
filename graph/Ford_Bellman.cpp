@@ -13,27 +13,24 @@ void top_sort(int vertex) {
 }
 
 vector<int> Ford_Bellman(int vertex) {
-    int n = d.size();
-    vector<int> dist(n, INF);
-    dist[vertex] = 0;
+    int n = (int)d.size();
     was.assign(n, false), topsort = {};
     top_sort(vertex);
     reverse(topsort.begin(), topsort.end());
+    vector<int> dist(n, INF);
+    dist[vertex] = 0;
     bool flag = true;
-    int q2 = 0;
-    while (flag && q2 < n) {
-        flag = false, q2++;
+    for (int q2 = 0; q2 < n; q2++) {
+        flag = false;
         for (int q : topsort) {
             for (p q1 : d[q]) {
-                if (dist[q1.first] > dist[q1.first]+q1.second) {
-                    dist[q1.first] = dist[q1.first]+q1.second, flag = true;
+                if (dist[q1.first] > dist[q]+q1.second) {
+                    dist[q1.first] = dist[q]+q1.second;
+                    flag = true;
                 }
             }
         }
     }
-    if (flag) {
-        return {};
-    }
-    return dist;
+    return flag ? vector<int>() : dist;
 }
 

@@ -1,49 +1,49 @@
-struct Ln {
+#define ld long double
+const ld E = 1e-8;
+
+struct Line {
     int k, b;
 
-    Ln(int k1, int b1) : k(k1), b(b1) {}
+    int value(int x) const {
+        return k*x+b;
+    }
+
+    ld value(ld x) const {
+        return k*x+b;
+    }
 };
 
-int value(Ln line, int x) {
-    return line.k*x+line.b;
+ld inter(Line a, Line b) {
+    return (ld)(b.b-a.b)/(a.k-b.k);
 }
 
-int inter(Ln line, Ln line1) {
-    if (line.k == line1.k) {
-        exit(179);
-    }
-    return (line1.b-line.b)/(line.k-line1.k)-(line1.b < line.b && (line1.b-line.b) % (line.k-line1.k) != 0);
-}
+struct CHT { // max, different angles
+    deque<pair<Line, ld>> a;
 
-struct CHT{
-    vector<pair<Ln, int>> a;
-
-    void add(Ln line) {
-        while (!a.empty() && a.back().first.k == line.k && a.back().first.b >= line.b) {
+    void add_increasing(Line line) {
+        while (a.size() > 1 && a.back().first.value(a.back().second)-E < line.value(a.back().second)) {
             a.pop_back();
         }
         if (a.empty()) {
-            a.push_back({line, -INF});
-            return;
-        }
-        if (a.back().first.k == line.k) {
-            return;
-        }
-        while (value(a.back().first, a.back().second) > value(line, a.back().second)) {
-            a.pop_back();
-        }
-        while (!a.empty() && inter(a.back().first, line) <= -INF) {
-            a.pop_back();
-        }
-        int x = inter(a.back().first, line);
-        if (x < INF) {
-            a.push_back({line, x});
+            a.emplace_back(line, -INF);
+        } else {
+            a.emplace_back(line, inter(a.back().first, line));
         }
     }
 
-    int ans(int x) {
-        auto w = --lower_bound(a.begin(), a.end(), x, [](pair<Ln, int> x, int y){return x.second < y;});
-        return value(w->first, x);
+    void add_decreasing(Line line) {
+        while (a.size() > 1 && a[1].first.value(a[1].second)-E < line.value(a[1].second)) {
+            a.pop_front();
+        }
+        if (!a.empty()) {
+            a[0].second = inter(a[0].first, line);
+        }
+        a.emplace_front(line, -INF);
+    }
+
+    int ans(int x) const {
+        auto w = --lower_bound(a.begin(), a.end(), x, [](pair<Line, ld> x, ld y) {return x.second < y;});
+        return w->first.value(x);
     }
 };
 
