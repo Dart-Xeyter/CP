@@ -46,16 +46,9 @@ int dist_2(Pt x, Pt y) {
     return abs_2(x-y);
 }
 
-ld abs_of_angle(Pt x, Pt y) {
-    int num = abs_2(x)+abs_2(y)-dist_2(x, y);
-    ld den = 2*abs(x)*abs(y);
-    ld cos_angle = min((ld)1.0, max((ld)-1.0, num/den));
-    return acosl(cos_angle);
-}
-
 ld angle(Pt x, Pt y) {
-    ld abs_angle = abs_of_angle(x, y);
-    return cross(x, y) >= 0 ? abs_angle : -abs_angle;
+    // angle between (1, 0) и (sin, cos)
+    return atan2(cross(x, y), dot(x, y));
 }
 
 struct Pt_frac {
@@ -110,6 +103,6 @@ struct Seg {
 };
 
 bool on_seg(Seg q, Pt point) {
-    return on_line(q.x, q.y, point) && dot(point-q.x, q.y-q.x) >= 0 && dot(point-q.y, q.x-q.y) >= 0;
+    return on_line(q.x, q.y, point) && dot(point-q.x, point-q.y) <= 0;
 }
 

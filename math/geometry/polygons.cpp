@@ -46,16 +46,9 @@ int dist_2(Pt x, Pt y) {
     return abs_2(x-y);
 }
 
-ld abs_of_angle(Pt x, Pt y) {
-    int num = abs_2(x)+abs_2(y)-dist_2(x, y);
-    ld den = 2*abs(x)*abs(y);
-    ld cos_angle = min((ld)1.0, max((ld)-1.0, num/den));
-    return acosl(cos_angle);
-}
-
 ld angle(Pt x, Pt y) {
-    ld abs_angle = abs_of_angle(x, y);
-    return cross(x, y) >= 0 ? abs_angle : -abs_angle;
+    // angle between (1, 0) и (sin, cos)
+    return atan2(cross(x, y), dot(x, y));
 }
 
 bool on_line(Pt x, Pt y, Pt z) {
@@ -69,25 +62,41 @@ struct Seg {
 };
 
 bool on_seg(Seg q, Pt point) {
-    return on_line(q.x, q.y, point) && dot(point-q.x, q.y-q.x) >= 0 && dot(point-q.y, q.x-q.y) >= 0;
+    return on_line(q.x, q.y, point) && dot(point-q.x, point-q.y) <= 0;
+}
+
+int S_tr_2(Pt x, Pt y, Pt z) {
+    return cross(y-x, z-x);
 }
 
 struct Polygon {
     vector<Pt> a;
 
-    explicit Polygon(vector<Pt> a): a(std::move(a)) {
+    explicit Polygon(vector<Pt> a_): a(std::move(a_)) {
+        if (a.size() == 2 && a[0] == a[1]) {
+            a.pop_back();
+        }
+        if (a.size() < 3) {
+            if (a.size() == 2) {
+                a.push_back(a[0]);
+            }
+            return;
+        }
         normalize();
+        a.push_back(a[0]);
     }
 
     void normalize() {
+        int n = (int)a.size();
         int ind = 1;
-        while (on_line(a[0], a[ind], a[ind+1])) {
+        while (ind < n-1 && on_line(a[0], a[ind], a[ind+1])) {
             ind++;
         }
+        assert(ind != n-1);
         rotate(a.begin(), a.begin()+ind, a.end());
         a.push_back(a[0]);
         vector<Pt> will_a = {a[0]};
-        for (int q = 1; q < (int)a.size()-1; q++) {
+        for (int q = 1; q < n; q++) {
             if (!on_line(will_a.back(), a[q], a[q+1])) {
                 will_a.push_back(a[q]);
             }
@@ -96,11 +105,13 @@ struct Polygon {
     }
 
     vector<Seg> get_edges() const {
-        vector<Pt> a1 = a;
-        a1.push_back(a[0]);
+        int n = (int)a.size();
+        if (n <= 1) {
+            return {};
+        }
         vector<Seg> edges;
-        for (int q = 1; q < a1.size(); q++) {
-            edges.emplace_back(a1[q-1], a1[q]);
+        for (int q = 1; q < n; q++) {
+            edges.emplace_back(a[q-1], a[q]);
         }
         return edges;
     }
@@ -120,48 +131,53 @@ struct Polygon {
         // will be 0 or 2*pi
         return abs(ang) > numbers::pi_v<ld>;
     }
+
+    int S_2() const {
+        int ans = 0;
+        for (Seg q : get_edges()) {
+            ans += S_tr_2(a[0], q.x, q.y);
+        }
+        return ans;
+    }
 };
 
-vector<Pt> convex_hull(vector<Pt> a) {
+bool need_pop_back(Pt x, vector<Pt>& ans, bool up) {
+    int m = (int)ans.size(), sign = 2*up-1;
+    return m >= 2 && cross(ans[m-1]-ans[m-2], x-ans[m-2])*sign >= 0;
+}
+
+void make_envelope(vector<Pt>& a, bool up) {
     int n = (int)a.size();
-    if (n == 0) {
-        return {};
-    }
-    sort(a.begin(), a.end());
-    vector<Pt> up = {a[0]}, down = {a[0]};
+    vector<Pt> ans = {a[0]};
     for (int q = 1; q < n; q++) {
-        while (up.size() > 1 && cross(up.back()-up[(int)up.size()-2], a[q]-up[(int)up.size()-2]) > 0) {
-            up.pop_back();
+        while (need_pop_back(a[q], ans, up)) {
+            ans.pop_back();
         }
-        up.push_back(a[q]);
-        while (down.size() > 1 && cross(down.back()-down[(int)down.size()-2], a[q]-down[(int)down.size()-2]) < 0) {
-            down.pop_back();
-        }
-        down.push_back(a[q]);
+        ans.push_back(a[q]);
     }
-    reverse(down.begin(), down.end());
-    up.pop_back(), down.pop_back();
-    vector<Pt> hull;
-    for (Pt q : up) {
-        hull.push_back(q);
-    }
-    for (Pt q : down) {
-        hull.push_back(q);
-    }
-    return hull;
+    a = ans;
 }
 
-int S_tr_2(Pt x, Pt y, Pt z) {
-    return cross(y-x, z-x);
-}
-
-int S_2(vector<Pt> a) {
+Polygon convex_hull(vector<Pt> a) {
     int n = (int)a.size();
-    a.push_back(a.back());
-    int ans = 0;
-    for (int q = 1; q <= n; q++) {
-        ans += S_tr_2(a[0], a[q-1], a[q]);
+    sort(a.begin(), a.end());
+    if (n == 0 || a[0] == a.back()) {
+        return Polygon(n == 0 ? vector<Pt>{} : vector{a[0]});
     }
-    return ans;
+    vector<Pt> up = {a[0]}, down = {a[0]};
+    for (int q = 1; q < n-1; q++) {
+        int value = cross(a.back()-a[0], a[q]-a[0]);
+        if (value > 0) {
+            up.push_back(a[q]);
+        } else if (value < 0) {
+            down.push_back(a[q]);
+        }
+    }
+    up.push_back(a.back());
+    down.push_back(a.back());
+    make_envelope(up, true);
+    make_envelope(down, false);
+    up.insert(up.end(), down.rbegin()+1, down.rend()-1);
+    return Polygon(up);
 }
 

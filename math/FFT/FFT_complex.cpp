@@ -1,5 +1,5 @@
 #define ld long double
-const ld PI = acosl(-1);
+const ld PI = numbers::pi_v<ld>;
 
 int reverse_bits(int x, int len) {
     int y = 0;
@@ -10,7 +10,7 @@ int reverse_bits(int x, int len) {
 }
 
 void FFT(vector<complex<ld>> &a) {
-    int n = a.size(), len = 1;
+    int n = (int)a.size(), len = 1;
     while ((1 << len) < n) {
         len++;
     }
@@ -34,7 +34,7 @@ void FFT(vector<complex<ld>> &a) {
 }
 
 void IFFT(vector<complex<ld>> &a) {
-    int n = a.size();
+    int n = (int)a.size();
     FFT(a);
     reverse(a.begin()+1, a.end());
     for (complex<ld> &q : a) {
@@ -45,10 +45,10 @@ void IFFT(vector<complex<ld>> &a) {
 vector<complex<ld>> to_FFT_form(const vector<int> &a, int deg) {
     vector<complex<ld>> A;
     for (int q : a) {
-        A.push_back(q);
+        A.emplace_back(q);
     }
     while (A.size() < deg) {
-        A.push_back(0);
+        A.emplace_back(0);
     }
     return A;
 }
@@ -56,7 +56,7 @@ vector<complex<ld>> to_FFT_form(const vector<int> &a, int deg) {
 vector<int> from_FFT_form(const vector<complex<ld>> &A) {
     vector<int> a;
     for (const complex<ld> &q : A) {
-        a.push_back(roundl(q.real()));
+        a.emplace_back(roundl(q.real()));
     }
     while (a.size() > 1 && a.back() == 0) {
         a.pop_back();
@@ -78,6 +78,49 @@ vector<int> mul(const vector<int> &a, const vector<int> &b) {
     }
     IFFT(C);
     return from_FFT_form(C);
+}
+
+vector<int> mul(const vector<int>& a, int x) {
+    vector<int> ans = a;
+    for (int& q : ans) {
+        q *= x;
+    }
+    return ans;
+}
+
+vector<int> add(const vector<int>& a, const vector<int>& b) {
+    int n = (int)a.size(), m = (int)b.size();
+    vector<int> c(max(n, m));
+    for (int q = 0; q < max(n, m); q++) {
+        c[q] = (q < n ? a[q] : 0)+(q < m ? b[q] : 0);
+    }
+    return c;
+}
+
+vector<int> multiply(vector<int> a, vector<int> b, int parts = 1, int max_value = INF) {
+    int n = (int)a.size(), m = (int)b.size();
+    vector<vector<int>> first(parts), second(parts);
+    for (int q1 = 0; q1 < parts; q1++) {
+        for (int q = 0; q < n; q++) {
+            first[q1].push_back(a[q] % max_value);
+            a[q] /= max_value;
+        }
+        for (int q = 0; q < m; q++) {
+            second[q1].push_back(b[q] % max_value);
+            b[q] /= max_value;
+        }
+    }
+    vector<int> degs = {1}, ans;
+    for (int q = 1; q < 2*parts-1; q++) {
+        degs.push_back(degs.back()*max_value);
+    }
+    for (int q = 0; q < parts; q++) {
+        for (int q1 = 0; q1 < parts; q1++) {
+            vector<int> now = mul(first[q], second[q1]);
+            ans = add(ans, mul(now, degs[q+q1]));
+        }
+    }
+    return ans;
 }
 
 vector<int> to_polynomial(const string &n) {
