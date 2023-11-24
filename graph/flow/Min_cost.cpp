@@ -1,82 +1,128 @@
 struct Edge {
-    int x, y, c, t, f;
-
-    Edge(int x1, int y1, int c1, int t1, int f1 = 0):
-        x(x1), y(y1), c(c1), t(t1), f(f1) {}
+    int x, y, c, f, v;
 };
 
-vector<vector<Edge>> d;
-vector<vector<int>> gf;
-vector<Edge> e;
-vector<int> topsort;
-vector<bool> was;
+struct Flow {
+    vector<vector<int>> gf;
+    vector<Edge> edges;
 
-void top_sort(int vertex) {
-    was[vertex] = true;
-    for (int q : gf[vertex]) {
-        Edge q1 = e[q];
-        if (!was[q1.y] && q1.c-q1.f > 0) {
-            top_sort(q1.y);
-        }
+    explicit Flow(int n) {
+        gf.assign(n, {});
     }
-    topsort.push_back(vertex);
-}
 
-pair<bool, int> Ford_Bellman(int x, int y) {
-    int n = d.size();
-    vector<int> dist(n, INF), parent_edge(n, -1), push(n, -1);
-    dist[x] = 0, push[x] = INF;
-    was.assign(n, false), topsort = {};
-    top_sort(x);
-    reverse(topsort.begin(), topsort.end());
-    bool flag = true;
-    while (flag) {
-        flag = false;
-        for (int q : topsort) {
-            for (int q2 : gf[q]) {
-                Edge q1 = e[q2];
-                if (dist[q1.y] > dist[q1.x]+q1.t && q1.c-q1.f > 0) {
-                    dist[q1.y] = dist[q1.x]+q1.t, parent_edge[q1.y] = q2;
-                    push[q1.y] = min(push[q1.x], q1.c-q1.f);
-                    flag = true;
+    void add_edge(int x, int y, int c, int v) {
+        gf[x].push_back((int)edges.size());
+        edges.emplace_back(x, y, c, 0, v);
+        gf[y].push_back((int)edges.size());
+        edges.emplace_back(y, x, 0, 0, -v);
+    }
+
+    vector<int> dists;
+
+    void build_dists(int x) {
+        int n = (int)gf.size();
+        dists.assign(n, INF);
+        vector<bool> taken(n, false);
+        queue<int> a;
+        dists[x] = 0, taken[x] = true;
+        a.push(x);
+        while (!a.empty()) {
+            int q = a.front();
+            a.pop();
+            taken[q] = false;
+            for (int q1 : gf[q]) {
+                Edge& e = edges[q1];
+                if (e.f != e.c && dists[e.y] > dists[q]+e.v) {
+                    dists[e.y] = dists[q]+e.v;
+                    if (!taken[e.y]) {
+                        taken[e.y] = true;
+                        a.push(e.y);
+                    }
                 }
             }
         }
     }
-    if (parent_edge[y] == -1) {
-        return {false, -1};
-    }
-    int ans = 0, x1 = push[y];
-    if (parent_edge[y] != -1) {
-        int q2 = y;
-        while (q2 != x) {
-            Edge &q1 = e[parent_edge[q2]];
-            q1.f += x1, e[parent_edge[q2] ^ 1].f -= x1, ans += q1.t*x1;
-            q2 = q1.x;
-        }
-    }
-    return {true, ans};
-}
 
-int min_cost(int x, int y) {
-    int n = d.size();
-    gf.assign(n, {}), e = {};
-    for (int q = 0; q < n; q++) {
-        for (Edge q1 : d[q]) {
-            gf[q1.x].push_back(e.size());
-            e.push_back(Edge(q1.x, q1.y, q1.c, q1.t));
-            gf[q1.y].push_back(e.size());
-            e.push_back(Edge(q1.y, q1.x, 0, -q1.t));
+    bool push(int x, int y) {
+        int n = (int)gf.size();
+        vector<int> will(n, INF), parents(n, -1);
+        priority_queue<p> a;
+        will[x] = 0;
+        a.emplace(0, x);
+        while (!a.empty()) {
+            int len = -a.top().first, q = a.top().second;
+            a.pop();
+            if (len != will[q]) {
+                continue;
+            }
+            for (int q1 : gf[q]) {
+                Edge& e = edges[q1];
+                int will_dist = len+e.v+dists[e.x]-dists[e.y];
+                if (e.f != e.c && will[e.y] > will_dist) {
+                    will[e.y] = will_dist, parents[e.y] = q1;
+                    a.emplace(-will_dist, e.y);
+                }
+            }
+        }
+        if (will[y] == INF) {
+            return false;
+        }
+        while (x != y) {
+            edges[parents[y]].f++;
+            edges[parents[y] ^ 1].f--;
+            y = edges[parents[y]].x;
+        }
+        for (int q = 0; q < n; q++) {
+            will[q] -= dists[x]-dists[q];
+        }
+        dists = will;
+        return true;
+    }
+
+    void build_flow(int x, int y, int k) {
+        build_dists(x);
+        for (int q = 0; q < k && push(x, y); q++);
+    }
+
+    int min_cost(int x, int y, int k = INF) {
+        build_flow(x, y, k);
+        int ans = 0;
+        for (int q = 0; q < edges.size(); q += 2) {
+            ans += edges[q].f*edges[q].v;
+        }
+        return ans;
+    }
+
+    vector<vector<int>> ways;
+
+    void find_way(int x, int y) {
+        if (x == y) {
+            return;
+        }
+        for (int q1 : gf[x]) {
+            Edge& q = edges[q1];
+            if (q.f > 0) {
+                find_way(q.y, y);
+                edges[q1].f--, edges[q1 ^ 1].f++;
+                ways.back().push_back(q1);
+                return;
+            }
         }
     }
-    int ans = 0;
-    while (true) {
-        pair<bool, int> x1 = Ford_Bellman(x, y);
-        if (!x1.first) {
-            break;
+
+    void decompose(int x, int y) {
+        ways = {};
+        vector<Edge> was_edges = edges;
+        int k = 0;
+        for (int q : gf[x]) {
+            k += edges[q].f;
         }
-        ans += x1.second;
+        for (int q = 0; q < k; q++) {
+            ways.emplace_back();
+            find_way(x, y);
+            reverse(ways.back().begin(), ways.back().end());
+        }
+        edges = was_edges;
     }
-    return ans;
-}
+};
 

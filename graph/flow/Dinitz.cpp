@@ -1,92 +1,85 @@
 struct Edge {
     int x, y, c, f;
-
-    Edge(int x1, int y1, int c1, int f1 = 0): x(x1), y(y1), c(c1), f(f1) {}
 };
 
-vector<vector<Edge>> d;
-vector<vector<int>> gf;
-vector<Edge> e;
-vector<bool> was;
+struct Flow {
+    vector<vector<int>> gf;
+    vector<Edge> edges;
 
-int push(int vertex, int x, int y) {
-    if (vertex == y) {
-        return x;
+    explicit Flow(int n) {
+        gf.assign(n, {});
     }
-    was[vertex] = true;
-    for (int q : gf[vertex]) {
-        Edge &q1 = e[q];
-        if (!was[q1.y] && q1.c-q1.f > 0) {
-            int x1 = push(q1.y, min(x, q1.c-q1.f), y);
-            if (x1 != -1) {
-                q1.f += x1, e[q ^ 1].f -= x1;
-                return x1;
+
+    void add_edge(int x, int y, int c, bool directed) {
+        gf[x].push_back((int)edges.size());
+        edges.emplace_back(x, y, c, 0);
+        gf[y].push_back((int)edges.size());
+        edges.emplace_back(y, x, (1-directed)*c, 0);
+    }
+
+    vector<int> layer, ind;
+
+    bool build_layers(int x, int y) {
+        layer.assign(gf.size(), -1);
+        ind.assign(gf.size(), 0);
+        queue<int> a;
+        a.push(x);
+        layer[x] = 0;
+        while (!a.empty()) {
+            int q = a.front();
+            if (q == y) {
+                return true;
+            }
+            a.pop();
+            for (int q1_ : gf[q]) {
+                Edge& q1 = edges[q1_];
+                if (q1.c == q1.f) {
+                    continue;
+                }
+                if (layer[q1.y] == -1) {
+                    a.push(q1.y);
+                    layer[q1.y] = layer[q1.x]+1;
+                }
             }
         }
+        return layer[y] != -1;
     }
-    return -1;
-}
 
-int BFS(int x, int y) {
-    int n = d.size();
-    vector<int> dist(n, INF);
-    queue<int> a;
-    a.push(x);
-    dist[x] = 0;
-    while (!a.empty()) {
-        int q = a.front();
-        a.pop();
-        if (q == y) {
-            break;
+    int push(int x, int y, int min1) {
+        if (x == y) {
+            return min1;
         }
-        for (int q2 : gf[q]) {
-            Edge &q1 = e[q2];
-            if (dist[q1.y] == INF && q1.c-q1.f > 0) {
-                a.push(q1.y);
-                dist[q1.y] = dist[q]+1;
+        int ans = 0;
+        for (; ind[x] < gf[x].size(); ind[x]++) {
+            int num = gf[x][ind[x]];
+            Edge& q = edges[num];
+            if (layer[q.y] != layer[q.x]+1 || q.f == q.c) {
+                continue;
+            }
+            int pushed = push(q.y, y, min(min1, q.c-q.f));
+            edges[num].f += pushed;
+            edges[num ^ 1].f -= pushed;
+            ans += pushed, min1 -= pushed;
+            if (min1 == 0) {
+                return ans;
             }
         }
+        return ans;
     }
-    vector<vector<int>> gf_const = gf;
-    gf.assign(n, {});
-    for (int q = 0; q < e.size(); q++) {
-        if (dist[e[q].x]+1 == dist[e[q].y]) {
-            gf[e[q].x].push_back(q);
-        }
-    }
-    int ans = -(dist[y] == INF);
-    while (true) {
-        was.assign(n, false);
-        int x1 = push(x, INF, y);
-        if (x1 == -1) {
-            break;
-        }
-        ans += x1;
-    }
-    gf = gf_const;
-    return ans;
-}
 
-int flow(int x, int y) {
-    int n = d.size();
-    gf.assign(n, {}), e = {};
-    for (int q = 0; q < n; q++) {
-        for (Edge q1 : d[q]) {
-            gf[q1.x].push_back(e.size());
-            e.push_back(Edge(q1.x, q1.y, q1.c));
-            gf[q1.y].push_back(e.size());
-            e.push_back(Edge(q1.y, q1.x, 0));
+    void build_flow(int x, int y) {
+        while (build_layers(x, y)) {
+            push(x, y, INF);
         }
     }
-    int ans = 0;
-    while (true) {
-        was.assign(n, false);
-        int x1 = BFS(x, y);
-        if (x1 == -1) {
-            break;
+
+    int max_flow(int x, int y) {
+        build_flow(x, y);
+        int ans = 0;
+        for (int q : gf[x]) {
+            ans += edges[q].f;
         }
-        ans += x1;
+        return ans;
     }
-    return ans;
-}
+};
 
