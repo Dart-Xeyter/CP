@@ -21,7 +21,8 @@ struct CHT { // max, different angles
     deque<pair<Line, ld>> a;
 
     void add_increasing(Line line) {
-        while (a.size() > 1 && a.back().first.value(a.back().second)-E < line.value(a.back().second)) {
+        while (a.size() > 1 && a.back().first.value(a.back().second)-E <
+                                line.value(a.back().second)) {
             a.pop_back();
         }
         if (a.empty()) {
@@ -42,7 +43,8 @@ struct CHT { // max, different angles
     }
 
     int ans(int x) const {
-        auto w = --lower_bound(a.begin(), a.end(), x, [](pair<Line, ld> x, ld y) {return x.second < y;});
+        auto lambda = [](pair<Line, ld> x, ld y) {return x.second < y;};
+        auto w = --lower_bound(a.begin(), a.end(), x, lambda);
         return w->first.value(x);
     }
 };

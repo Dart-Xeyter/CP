@@ -14,7 +14,8 @@ struct Sparse {
         }
         for (int q = 1; q <= logs.back(); q++) {
             for (int q1 = 0; q1 < n; q1++) {
-                mins[q1][q] = min(mins[q1][q-1], (q1 < n-(1 << (q-1)) ? mins[q1+(1 << (q-1))][q-1] : INF));
+                int value = (q1 < n-(1 << (q-1)) ? mins[q1+(1 << (q-1))][q-1] : INF);
+                mins[q1][q] = min(mins[q1][q-1], value);
             }
         }
     }

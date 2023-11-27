@@ -75,7 +75,8 @@ vector<int> get_smith(vector<vector<int>> &d) {
     return smith;
 }
 
-int sum_games_result(vector<vector<int>> &d1, vector<vector<int>> &d2, vector<int> &smith1, vector<int> &smith2, int x, int y) {
+int sum_games_result(vector<vector<int>> &d1, vector<vector<int>> &d2,
+                     vector<int> &smith1, vector<int> &smith2, int x, int y) {
     if (smith1[x] == -1 && smith2[y] == -1) {
         return -1;
     }

@@ -79,7 +79,8 @@ Node* add(Node* tree, int x) {
 
 Node* del(Node* tree, int x) {
     pair<Node*, Node*> trees = split(tree, x);
-    pair<Node*, Node*> trees1 = split_num(trees.first, (trees.first != nullptr ? trees.first->size-1 : 0));
+    int k = (trees.first != nullptr ? trees.first->size-1 : 0);
+    pair<Node*, Node*> trees1 = split_num(trees.first, k);
     return merge(trees1.first, trees.second);
 }
 
