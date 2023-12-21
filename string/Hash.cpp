@@ -1,32 +1,44 @@
-struct Hash {
-    vector<int> hashs = {0}, deg = {1};
-    const int C = 1791179179, C1 = 17957179;
-
-    Hash(string &s) {
-        for (int q : s) {
-            hashs.push_back((hashs.back()*C1+q) % C);
-            deg.push_back(deg.back()*C1 % C);
-        }
-    }
-
-    int hash(int l, int r) {
-        return ((hashs[r]-hashs[l]*deg[r-l]) % C+C) % C;
-    }
+static constexpr int modules[] = {
+        1791179179,
+        1791791791,
+        570057179,
+        179179057,
+        57057179,
+        17957179, // 5
+        5700179,
+        2057179,
+        571799,
+        179057,
+        44179,
+        571794442013,
+        1057057179057179057,
 };
 
-struct Hash1 {
-    vector<int> hashs = {0}, deg = {1};
-    const int C = 1791791791, C1 = 179;
+static constexpr int multiplier_size = 2;
+static constexpr int multiplier[] = {
+        17957179, 179
+};
 
-    Hash1(string &s) {
-        for (int q : s) {
-            hashs.push_back((hashs.back()*C1+q) % C);
-            deg.push_back(deg.back()*C1 % C);
+template <typename T>
+struct Hash {
+    const int C = 0, D;
+    vector<int> degs, hashs;
+
+    static int get_D(int type) {
+        return multiplier[min(multiplier_size-1, type)];
+    }
+
+    explicit Hash(const T& s, int type = 0): C(modules[type]), D(get_D(type)){
+        degs = {1}, hashs = {0};
+        for (auto q : s) {
+            degs.push_back(degs.back()*D % C);
+            hashs.push_back((hashs.back()*D+q) % C);
         }
     }
 
-    int hash(int l, int r) {
-        return ((hashs[r]-hashs[l]*deg[r-l]) % C+C) % C;
+    int hash(int l, int r) const {
+        int ans = (hashs[r]-hashs[l]*degs[r-l]) % C;
+        return ans+(ans < 0)*C;
     }
 };
 

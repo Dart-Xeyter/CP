@@ -31,49 +31,27 @@ vector<int> suf_mas(string &s) {
         }
         suf = will_suf, cls = will_cls, deg *= 2;
     }
-    s.pop_back();
     return suf;
 }
 
-vector<int> LCP(string &s, vector<int> &sufmas) {
-    s += '#';
-    int n = s.size();
-    vector<int> where(n);
-    for (int q = 0; q < n; q++) {
-        where[sufmas[q]] = q;
+vector<int> LCP(const string& s, const vector<int>& sufmas) {
+    int n = (int)s.size()-1; // '#' in the end
+    vector<int> pos(n+1), lcp(n+1, 0);
+    for (int q = 0; q <= n; q++) {
+        pos[sufmas[q]] = q;
     }
-    vector<int> lcp(n-1, 0);
-    for (int q = 0; q < n-1; q++) {
-        if (where[q] == n-1) {
+    for (int q = 0; q <= n; q++) {
+        int q1 = pos[q];
+        if (q1 == n) {
             continue;
         }
-        int is = (q == 0 || where[q-1] == n-1 ? 0 : max(0LL, lcp[where[q-1]]-1));
-        for (int q1 = is;; q1++) {
-            if (s[q+q1] != s[sufmas[where[q]+1]+q1]) {
-                lcp[where[q]] = q1;
-                break;
-            }
+        int next_q = sufmas[q1+1];
+        lcp[q1] = (q == 0 ? 0 : max(0LL, lcp[pos[q-1]]-1));
+        while (s[q+lcp[q1]] == s[next_q+lcp[q1]]) {
+            lcp[q1]++;
         }
     }
-    s.pop_back();
+    lcp.pop_back();
     return lcp;
-}
-
-pair<p, int> find(string &s, string &t, vector<int> &sufmas) {
-    s += '#';
-    int n = sufmas.size(), m = t.size();
-    int l = 0, r = n, ind = 0;
-    for (; ind < m; ind++) {
-        auto lambda_l = [&s, ind](int x, char y) {return s[x+ind] < y;};
-        int l1 = lower_bound(sufmas.begin()+l, sufmas.begin()+r, t[ind], lambda_l)-sufmas.begin();
-        auto lambda_r = [&s, ind](int x, char y) {return s[x+ind] <= y;};
-        int r1 = lower_bound(sufmas.begin()+l, sufmas.begin()+r, t[ind], lambda_r)-sufmas.begin();
-        if (l1 == r1) {
-            break;
-        }
-        l = l1, r = r1;
-    }
-    s.pop_back();
-    return {{l, r}, ind};
 }
 

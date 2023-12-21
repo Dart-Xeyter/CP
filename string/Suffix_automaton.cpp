@@ -1,81 +1,91 @@
-int C = 26, L;
-
 struct Node {
-    vector<int> a;
-    int suf, len, right, parent;
-    char symbol;
-
-    Node(int parent1 = -1, char symbol1 = '#', int len1 = 0, vector<int> a1 = {}) {
-        a = (a1.empty() ? vector<int>(C, -1) : a1);
-        parent = parent1, symbol = symbol1, len = len1+1, suf = -1, right = 0;
-    }
+    int suf = -1, len = 0;
+    int term = 0, num = -1;
 };
 
-vector<Node> trie;
-vector<int> last;
+struct Automaton {
+    const int E = 10, FIRST = '0';
+    vector<vector<int>> d;
+    vector<Node> a;
+    int end;
 
-int make_moves(int &vertex, char q) {
-    if (trie[vertex].a[q-'a'] != -1) {
-        return trie[vertex].a[q-'a'];
-    }
-    int b = trie.size();
-    trie.push_back(Node(vertex, q, trie[vertex].len));
-    while (vertex != -1 && trie[vertex].a[q-'a'] == -1) {
-        trie[vertex].a[q-'a'] = b;
-        vertex = trie[vertex].suf;
-    }
-    trie[b].suf = (vertex == -1 ? 0 : trie[vertex].a[q-'a']);
-    return b;
-}
-
-int add(int vertex, char q) {
-    int b = make_moves(vertex, q);
-    if (vertex == -1 || trie[trie[vertex].a[q-'a']].parent == vertex) {
-        return b;
-    }
-    int c = trie[vertex].a[q-'a'], d = trie.size();
-    trie.push_back(Node(vertex, q, trie[vertex].len, trie[c].a));
-    while (vertex != -1 && trie[vertex].a[q-'a'] == c) {
-        trie[vertex].a[q-'a'] = d;
-        vertex = trie[vertex].suf;
-    }
-    trie[d].suf = trie[c].suf, trie[c].suf = trie[b].suf = d;
-    return (b == c ? d : b);
-}
-
-vector<bool> was;
-
-void build_other(int vertex) {
-    was[vertex] = true;
-    for (int q = 0; q < C; q++) {
-        if (trie[vertex].a[q] == -1) {
-            continue;
+    void build_num(int vertex) {
+        a[vertex].num = (a[vertex].term > 0);
+        for (int q : d[vertex]) {
+            if (q != -1 && a[q].num == -1) {
+                build_num(q);
+            }
+            if (q != -1) {
+                a[vertex].num += a[q].num;
+            }
         }
-        if (!was[trie[vertex].a[q]]) {
-            build_other(trie[vertex].a[q]);
-        }
-        trie[vertex].right += trie[trie[vertex].a[q]].right;
     }
-}
 
-void build_automation(vector<string> &a) {
-    trie = {Node()};
-    for (string &s : a) {
+    void build_other() {
+        while (end != 0) {
+            a[end].term = a[end].len-a[a[end].suf].len;
+            end = a[end].suf;
+        }
+        a[0].term = 1;
+        build_num(0);
+    }
+
+    Automaton() {
+        end = add_node();
+    }
+
+    explicit Automaton(const string& s): Automaton() {
+        for (char q : s) {
+            add(q);
+        }
+        build_other();
+    }
+
+    int add_node() {
+        d.emplace_back(E, -1);
+        a.emplace_back();
+        return (int)a.size()-1;
+    }
+
+    int clone_node(int q) {
+        d.push_back(d[q]);
+        a.push_back(a[q]);
+        return (int)a.size()-1;
+    }
+
+    void add(char w) {
+        w -= FIRST;
+        int vertex = end;
+        end = add_node();
+        a[end].len = a[vertex].len+1;
+        while (vertex != -1 && d[vertex][w] == -1) {
+            d[vertex][w] = end;
+            vertex = a[vertex].suf;
+        }
+        int Q = (vertex == -1 ? 0 : d[vertex][w]);
+        if (vertex == -1 || a[Q].len == a[vertex].len+1) {
+            a[end].suf = Q;
+            return;
+        }
+        int new_Q = clone_node(Q);
+        a[new_Q].len = a[vertex].len+1;
+        while (vertex != -1 && d[vertex][w] == Q) {
+            d[vertex][w] = new_Q;
+            vertex = a[vertex].suf;
+        }
+        a[Q].suf = a[end].suf = new_Q;
+    }
+
+    int go(const string& t) const {
         int vertex = 0;
-        for (char &q : s) {
-            vertex = add(vertex, q);
+        for (char q : t) {
+            q -= FIRST;
+            vertex = d[vertex][q];
+            if (vertex == -1) {
+                return -1;
+            }
         }
-        last.push_back(vertex);
+        return vertex;
     }
-    L = trie.size();
-    for (int q = 0; q < (int)a.size(); q++) {
-        int vertex = last[q];
-        while (vertex != -1) {
-            trie[vertex].right++;
-            vertex = trie[vertex].suf;
-        }
-    }
-    was.assign(L, false);
-    build_other(0);
-}
+};
 

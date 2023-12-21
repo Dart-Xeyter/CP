@@ -1,17 +1,17 @@
-vector<int> z_func(string &a) {
-    vector<int> z = {0};
-    int ind = 0;
-    for (int q1 = 1; q1 < a.size(); q1++) {
-        if (ind+z[ind] >= q1 && q1+z[q1-ind] < ind+z[ind]) {
-            z.push_back(z[q1-ind]);
-        } else {
-            int q2 = max(q1, ind+z[ind]);
-            while (q2 < a.size() && a[q2] == a[q2-q1]) {
-                q2++;
-            }
-            z.push_back(q2-q1);
-            ind = q1;
+vector<int> z_func(const string& s) {
+    int n = (int)s.size();
+    vector<int> z(n, 0);
+    int ind_max = 0, right_max = 1;
+    for (int q = 1; q < n; q++) {
+        if (q+z[q-ind_max] < right_max) {
+            z[q] = z[q-ind_max];
+            continue;
         }
+        while (right_max < n && s[right_max-q] == s[right_max]) {
+            right_max++;
+        }
+        z[q] = right_max-q;
+        ind_max = q, right_max += (z[q] == 0);
     }
     return z;
 }
