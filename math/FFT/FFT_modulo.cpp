@@ -41,77 +41,65 @@ int find_g(int C) {
     }
 }
 
-int reverse_bits(int x, int len) {
+int reverse_bits(int x, int log1) {
     int y = 0;
-    for (int q = 0; q < len; q++) {
-        y |= (((x >> q) & 1) << (len-q-1));
+    for (int q = 0; q < log1; q++) {
+        y |= (((x >> q) & 1) << (log1-q-1));
     }
     return y;
 }
 
-void FFT(vector<int> &a, int C) {
-    int n = a.size(), len = 1;
-    while ((1 << len) < n) {
-        len++;
-    }
+void FFT(vector<int> &a, int C, int g, int log1) {
+    int n = a.size();
+    vector<bool> good(n, true);
     for (int q = 0; q < n; q++) {
-        int q1 = reverse_bits(q, len);
-        if (q < q1) {
+        if (good[q]) {
+            int q1 = reverse_bits(q, log1);
             swap(a[q], a[q1]);
+            good[q1] = false;
         }
     }
-    int g = find_g(C);
     for (int q = 1; q < n; q <<= 1) {
         int root = pow1(g, (C-1)/(q << 1), C);
         for (int q1 = 0; q1 < n; q1 += (q << 1)) {
             int now = 1;
             for (int q2 = q1; q2 < q1+q; q2++) {
                 int x = a[q2], y = a[q2+q]*now % C;
-                a[q2] = (x+y) % C, a[q2+q] = (x-y+C) % C;
+                a[q2] = x+y-(x+y >= C)*C, a[q2+q] = x-y+(x-y < 0)*C;
                 now = now*root % C;
             }
         }
     }
 }
 
-void IFFT(vector<int> &a, int C) {
-    int n = a.size();
-    FFT(a, C);
+void IFFT(vector<int> &a, int C, int g, int log1) {
+    FFT(a, C, g, log1);
     reverse(a.begin()+1, a.end());
+    int rev_n = pow1(a.size(), C-2, C);
     for (int &q : a) {
-        q = q*pow1(n, C-2, C) % C;
-    }
-}
-
-void fix_polynomial(vector<int> &a, int n, int C) {
-    while (a.size() < n) {
-        a.push_back(0);
-    }
-    while (a.size() > n && a.back() == 0) {
-        a.pop_back();
-    }
-    for (int &q : a) {
-        q = (q % C+C) % C;
+        q = q*rev_n % C;
     }
 }
 
 int get_degree(int n) {
-    int deg = 1;
-    while (deg < n) {
-        deg <<= 1;
+    int log1 = 0;
+    while ((1 << log1) < n) {
+        log1++;
     }
-    return deg;
+    return log1;
 }
 
 vector<int> multiply(vector<int> a, vector<int> b, int C) {
-    int deg = get_degree(a.size()+b.size());
-    fix_polynomial(a, deg, C), fix_polynomial(b, deg, C);
-    FFT(a, C), FFT(b, C);
-    for (int q = 0; q < deg; q++) {
+    int log1 = get_degree(a.size()+b.size());
+    int n = (1 << log1), g = find_g(C);
+    a.resize(n, 0), b.resize(n, 0);
+    FFT(a, C, g, log1), FFT(b, C, g, log1);
+    for (int q = 0; q < n; q++) {
         a[q] = a[q]*b[q] % C;
     }
-    IFFT(a, C);
-    fix_polynomial(a, 1, C);
+    IFFT(a, C, g, log1);
+    auto w = find_if_not(a.rbegin(), a.rend(), [](int x) {return x == 0;});
+    a.resize(max(1LL, (int)(a.rend()-w)));
     return a;
 }
 

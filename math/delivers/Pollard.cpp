@@ -47,7 +47,7 @@ int f_Pollard(__int128 x, int n) {
 vector<int> make_Pollard(int n) {
     if (Miller_Rabin(n)) {
         return {n};
-    } 
+    }
     int x = randint() % (n-1)+1;
     int y = f_Pollard(x, n);
     while (__gcd(n, abs(y-x)) == 1) {
@@ -68,22 +68,20 @@ vector<int> make_Pollard(int n) {
 vector<int> Pollard(int n) {
     vector<int> primes, small = {2, 3, 5, 7};
     for (int q : small) {
-        if (n % q == 0) {
+        while (n % q == 0) {
             primes.push_back(q);
-            while (n % q == 0) {
-                n /= q;
-            }
+            n /= q;
         }
     }
     if (n == 1) {
         return primes;
     }
-    set<int> was;
+    multiset<int> all;
     for (int q : make_Pollard(n)) {
-        if (was.find(q) == was.end()) {
-            primes.push_back(q);
-            was.insert(q);
-        }
+        all.insert(q);
+    }
+    for (int q : all) {
+        primes.push_back(q);
     }
     return primes;
 }

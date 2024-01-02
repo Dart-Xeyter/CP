@@ -22,6 +22,11 @@ istream& operator>>(istream& in, Pt& point) {
     return in;
 }
 
+ostream& operator<<(ostream& out, const Pt& point) {
+    out << point.x << ' ' << point.y;
+    return out;
+}
+
 int dot(Pt x, Pt y) {
     return x.x*y.x+x.y*y.y;
 }
@@ -59,6 +64,12 @@ struct Seg {
     Pt x, y;
 
     Seg(Pt x, Pt y): x(x), y(y) {}
+
+    auto operator<=>(const Seg& other) const = default;
+
+    explicit operator bool() const {
+        return x != y;
+    }
 };
 
 bool on_seg(Seg q, Pt point) {
@@ -72,18 +83,20 @@ int S_tr_2(Pt x, Pt y, Pt z) {
 struct Polygon {
     vector<Pt> a;
 
-    explicit Polygon(vector<Pt> a_): a(std::move(a_)) {
-        if (a.size() == 2 && a[0] == a[1]) {
-            a.pop_back();
-        }
-        if (a.size() < 3) {
-            if (a.size() == 2) {
-                a.push_back(a[0]);
-            }
+    explicit Polygon(vector<Pt> a_ = {}): a(std::move(a_)) {
+        if (a.empty()) {
             return;
         }
         normalize();
-        a.push_back(a[0]);
+        if (a.size() > 1) {
+            a.push_back(a[0]);
+        }
+    }
+
+    void counterclockwise() {
+        if (S_2() < 0) {
+            reverse(a.begin(), a.end());
+        }
     }
 
     void normalize() {
@@ -92,7 +105,12 @@ struct Polygon {
         while (ind < n-1 && on_line(a[0], a[ind], a[ind+1])) {
             ind++;
         }
-        assert(ind != n-1);
+        if (ind >= n-1) {
+            Pt min1 = *min_element(a.begin(), a.end());
+            Pt max1 = *max_element(a.begin(), a.end());
+            a = (min1 == max1 ? vector{min1} : vector{min1, max1});
+            return;
+        }
         rotate(a.begin(), a.begin()+ind, a.end());
         a.push_back(a[0]);
         vector<Pt> will_a = {a[0]};
@@ -106,9 +124,6 @@ struct Polygon {
 
     vector<Seg> get_edges() const {
         int n = (int)a.size();
-        if (n <= 1) {
-            return {};
-        }
         vector<Seg> edges;
         for (int q = 1; q < n; q++) {
             edges.emplace_back(a[q-1], a[q]);
@@ -120,7 +135,7 @@ struct Polygon {
         return ranges::any_of(get_edges(), [point](Seg q) {return on_seg(q, point);});
     }
 
-    int belonging(Pt point) const {
+    int belonging(Pt point) const { // 0 -> out, 1 -> in, 2 -> border
         if (on_border(point)) {
             return 2;
         }
