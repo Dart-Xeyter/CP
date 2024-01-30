@@ -41,7 +41,7 @@ bool Miller_Rabin(int n, int k = 20) {
 }
 
 int f_Pollard(__int128 x, int n) {
-    return (x*x+1) % n;
+    return (x*x+3) % n;
 }
 
 vector<int> make_Pollard(int n) {

@@ -1,4 +1,3 @@
-const int C = 1000000007;
 vector<int> fact, rev_fact;
 
 int pow1(int x, int y, int z = C) {
@@ -23,10 +22,17 @@ void make_fact(int n) {
     reverse(rev_fact.begin(), rev_fact.end());
 }
 
-int C_n_k(int k, int n) {
+int C_k_n(int k, int n) {
     if (k < 0 || k > n) {
         return 0;
     }
     return fact[n]*rev_fact[k] % C*rev_fact[n-k] % C;
+}
+
+int _C_k_n(int k, int n) {
+    if (k == 0 && n == 0) {
+        return 1;
+    }
+    return C_k_n(k, n+k-1);
 }
 
