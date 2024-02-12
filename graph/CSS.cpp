@@ -25,8 +25,9 @@ void DFS_CSS(int vertex) {
 }
 
 void CSS() {
-    int n = d.size();
-    d1.assign(n, {}), comp = {}, cond = {}, who.assign(n, -1), topsort = {}, was.assign(n, false);
+    int n = (int)d.size();
+    d1.assign(n, {}), comp = {}, cond = {};
+    who.assign(n, -1), topsort = {}, was.assign(n, false);
     for (int q = 0; q < n; q++) {
         if (!was[q]) {
             top_sort(q);
@@ -39,7 +40,8 @@ void CSS() {
     was.assign(n, false);
     for (int q : topsort) {
         if (!was[q]) {
-            comp.emplace_back(), cond.emplace_back();
+            comp.emplace_back();
+            cond.emplace_back();
             DFS_CSS(q);
         }
     }
