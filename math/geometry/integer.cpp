@@ -65,7 +65,7 @@ struct Line {
     Line(Pt x, Pt y): a(x.y-y.y), b(y.x-x.x), c(cross(x, y)) {}
 
     Pt dir() const {
-        return {-b, a};
+        return {b, -a};
     }
 
     Pt norm() const {

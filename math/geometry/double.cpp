@@ -1,25 +1,25 @@
 #define ld long double
 const ld E = 1e-8;
 
-struct Pt_ld {
+struct Pt {
     ld x, y;
 
-    Pt_ld(): x(0), y(0) {}
-    Pt_ld(ld x, ld y): x(x), y(y) {}
+    Pt(): x(0), y(0) {}
+    Pt(ld x, ld y): x(x), y(y) {}
 
-    bool operator==(const Pt_ld& point) const {
+    bool operator==(const Pt& point) const {
         return abs(x-point.x) < E && abs(y-point.y) < E;
     }
 
-    bool operator<(const Pt_ld& point) const {
+    bool operator<(const Pt& point) const {
         return x+E < point.x || abs(x-point.x) < E && y+E < point.y;
     }
 
-    Pt_ld operator+(const Pt_ld& point) const {
+    Pt operator+(const Pt& point) const {
         return {x+point.x, y+point.y};
     }
 
-    Pt_ld operator-(const Pt_ld& point) const {
+    Pt operator-(const Pt& point) const {
         return {x-point.x, y-point.y};
     }
 
@@ -27,38 +27,38 @@ struct Pt_ld {
         return hypotl(x, y);
     }
 
-    Pt_ld norm(ld len) const {
+    Pt norm(ld len) const {
         ld k = len/get_abs();
         return {x*k, y*k};
     }
 };
 
-istream& operator>>(istream& in, Pt_ld& point) {
+istream& operator>>(istream& in, Pt& point) {
     in >> point.x >> point.y;
     return in;
 }
 
-ld dot(Pt_ld x, Pt_ld y) {
+ld dot(Pt x, Pt y) {
     return x.x*y.x+x.y*y.y;
 }
 
-ld cross(Pt_ld x, Pt_ld y) {
+ld cross(Pt x, Pt y) {
     return x.x*y.y-x.y*y.x;
 }
 
-ld abs(Pt_ld x) {
+ld abs(Pt x) {
     return x.get_abs();
 }
 
-ld abs_2(Pt_ld x) {
+ld abs_2(Pt x) {
     return x.x*x.x+x.y*x.y;
 }
 
-ld dist(Pt_ld x, Pt_ld y) {
+ld dist(Pt x, Pt y) {
     return abs(x-y);
 }
 
-ld dist_2(Pt_ld x, Pt_ld y) {
+ld dist_2(Pt x, Pt y) {
     return abs_2(x-y);
 }
 
@@ -67,71 +67,72 @@ ld angle(Pt x, Pt y) {
     return atan2(cross(x, y), dot(x, y));
 }
 
-struct Line_ld {
+struct Line {
     ld a, b, c;
 
-    Line_ld(Pt_ld x, Pt_ld y): a(x.y-y.y), b(y.x-x.x), c(cross(x, y)) {}
+    Line(ld a, ld b, ld c): a(a), b(b), c(c) {}
+    Line(Pt x, Pt y): a(x.y-y.y), b(y.x-x.x), c(cross(x, y)) {}
 
-    Pt_ld dir() const {
-        return {-b, a};
+    Pt dir() const {
+        return {b, -a};
     }
 
-    Pt_ld norm() const {
+    Pt norm() const {
         return {a, b};
     }
 
-    Line_ld per(Pt_ld x) const {
+    Line per(Pt x) const {
         return {x, x+norm()};
     }
 
-    bool on(Pt_ld x) const {
+    bool on(Pt x) const {
         return abs(a*x.x+b*x.y+c) < E;
     }
 };
 
-bool on_line(Pt_ld x, Pt_ld y, Pt_ld z) {
+bool on_line(Pt x, Pt y, Pt z) {
     return abs(cross(y-x, z-x)) < E;
 }
 
-bool is_parallel(Line_ld a, Line_ld b) {
+bool is_parallel(Line a, Line b) {
     return abs(cross(a.dir(), b.dir())) < E;
 }
 
-vector<Pt_ld> inter(Line_ld a, Line_ld b) {
+vector<Pt> inter(Line a, Line b) {
     if (is_parallel(a, b)) {
         return {};
     }
     ld det = cross(a.norm(), b.norm());
-    ld det_x = cross(Pt_ld(-a.c, a.b), Pt_ld(-b.c, b.b));
-    ld det_y = cross(Pt_ld(a.a, -a.c), Pt_ld(b.a, -b.c));
-    return {Pt_ld(det_x/det, det_y/det)};
+    ld det_x = cross(Pt(-a.c, a.b), Pt(-b.c, b.b));
+    ld det_y = cross(Pt(a.a, -a.c), Pt(b.a, -b.c));
+    return {Pt(det_x/det, det_y/det)};
 }
 
-Pt_ld projection(Line_ld line, Pt_ld x) {
+Pt projection(Line line, Pt x) {
     return inter(line, line.per(x))[0];
 }
 
-struct Seg_ld {
-    Pt_ld x, y;
+struct Seg {
+    Pt x, y;
 
-    Seg_ld() = default;
-    Seg_ld(Pt_ld x, Pt_ld y): x(x), y(y) {}
+    Seg() = default;
+    Seg(Pt x, Pt y): x(x), y(y) {}
 
     explicit operator bool() const {
         return x != y;
     }
 
-    Line_ld line() const {
+    Line line() const {
         return {x, y};
     }
 
-    bool on(Pt_ld point) const {
-        return on_line(x, y, point) && dot(point-q.x, point-q.y) < E;
+    bool on(Pt point) const {
+        return on_line(x, y, point) && dot(point-x, point-y) < E;
     }
 };
 
-vector<Pt_ld> inter(Seg_ld a, Seg_ld b) {
-    vector<Pt_ld> inters;
+vector<Pt> inter(Seg a, Seg b) {
+    vector<Pt> inters;
     if (!a && b.on(a.x)) {
         inters.push_back(a.x);
     } else if (!b && a.on(b.x)) {
@@ -147,41 +148,54 @@ vector<Pt_ld> inter(Seg_ld a, Seg_ld b) {
     return {};
 }
 
-struct Cir_ld {
-    Pt_ld x;
+struct Cir {
+    Pt x;
     ld r = 0;
 
-    Cir_ld() = default;
-    Cir_ld(Pt_ld x, ld r): x(x), r(r) {}
+    Cir() = default;
+    Cir(Pt x, ld r): x(x), r(r) {}
 
-    bool on(Pt_ld point) const {
+    bool on(Pt point) const {
         return abs(dist(point, x)-r) < E;
     }
 };
 
-vector<Pt_ld> inter(Cir_ld cir, Line_ld line) {
-    Pt_ld proj = projection(line, cir.x);
+vector<Pt> inter(Cir cir, Line line) {
+    Pt proj = projection(line, cir.x);
     ld h = dist(proj, cir.x);
     if (h > cir.r-E) {
-        return h > cir.r+E ? vector<Pt_ld>() : vector{proj};
+        return h > cir.r+E ? vector<Pt>() : vector{proj};
     }
     ld len = sqrtl(cir.r*cir.r-h*h);
-    Pt_ld dir = line.dir().norm(len);
-    vector<Pt_ld> ans = {proj-dir, proj+dir};
+    Pt dir = line.dir().norm(len);
+    vector<Pt> ans = {proj-dir, proj+dir};
     sort(ans.begin(), ans.end());
     return ans;
 }
 
-vector<Pt_ld> inter(Cir_ld cir, Seg_ld seg) {
+vector<Pt> inter(Cir cir, Seg seg) {
     if (!seg) {
-        return cir.on(seg.x) ? vector{seg.x} : vector<Pt_ld>();
+        return cir.on(seg.x) ? vector{seg.x} : vector<Pt>();
     }
-    vector<Pt_ld> ans, inters = inter(cir, seg.line());
-    for (Pt_ld q : inters) {
+    vector<Pt> ans, inters = inter(cir, seg.line());
+    for (Pt q : inters) {
         if (seg.on(q)) {
             ans.push_back(q);
         }
     }
     return ans;
+}
+
+Line rad_axis(Cir cir1, Cir cir2) {
+    ld a1 = cir1.x.x, b1 = cir1.x.y, r1 = cir1.r;
+    ld a2 = cir2.x.x, b2 = cir2.x.y, r2 = cir2.r;
+    return {2*(a2-a1), 2*(b2-b1), a1*a1-a2*a2+b1*b1-b2*b2+r2*r2-r1*r1};
+}
+
+vector<Pt> inter(Cir cir1, Cir cir2) {
+    if (cir1.x == cir2.x) {
+        return {};
+    }
+    return inter(cir1, rad_axis(cir1, cir2));
 }
 
