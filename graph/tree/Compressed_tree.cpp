@@ -34,7 +34,7 @@ int LCA(int x, int y) {
 
 vector<vector<int>> tree;
 
-int make_compressed_tree(vector<int> &a) {
+int make_compressed_tree(vector<int> a) {
     int n = a.size();
     sort(a.begin(), a.end(), [](int x, int y) {return tin[x] < tin[y];});
     for (int q = 1; q < n; q++) {
@@ -52,6 +52,7 @@ int make_compressed_tree(vector<int> &a) {
         }
         if (stack.back() != a[q]) {
             tree[stack.back()].push_back(a[q]);
+            tree[a[q]].push_back(stack.back());
             stack.push_back(a[q]);
         }
     }

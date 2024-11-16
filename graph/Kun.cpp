@@ -13,11 +13,21 @@ bool find_chain(int vertex) {
     return false;
 }
 
+mt19937 randint(17957179);
+
 void Kun(int n, int m) {
-    pa.assign(n, -1), pb.assign(m, -1), was_a.assign(n, false);
-    for (int q = 0; q < n; q++) {
-        if (find_chain(q)) {
-            was_a.assign(n, false);
+    pa.assign(n, -1), pb.assign(n+m, -1);
+    vector<int> perm(n);
+    iota(perm.begin(), perm.end(), 0);
+    shuffle(perm.begin(), perm.end(), randint);
+    bool flag = true;
+    while (flag) {
+        flag = false;
+        was_a.assign(n, false);
+        for (int q : perm) {
+            if (pa[q] == -1 && find_chain(q)) {
+                flag = true;
+            }
         }
     }
 }

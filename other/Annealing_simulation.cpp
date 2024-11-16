@@ -1,37 +1,52 @@
 mt19937 randint(179);
-
-int change(int ind, vector<int> &a) {
-    int x = a[ind], cost = 0;
-    //code
-    return cost;
-}
-
 const int MN = (1LL << 20);
 
-bool P(int x, int y, long double t) {
-    long double is = exp((y-x)/t);
+bool P(int x, int y, ld t) {
+    ld is = exp((y-x)/t);
     return randint() % MN < is*MN;
 }
 
-vector<int> annealing(int n) {
-    vector<int> a(n);
+int get_score(int x, vector<int>& a) {
+    int ans = 0;
+    for (int q : a) {
+        ans += min(3LL, num_bits[q ^ x]);
+    }
+    return ans;
+}
+
+int delta_score(int ind, int x, vector<int> &a) {
+    int score = 0, w = a[ind];
+    a[ind] = x;
+    score += get_score(a[ind], a);
+    a[ind] = w;
+    score -= get_score(a[ind], a);
+    return score*2;
+}
+
+auto annealing(int n) {
+    vector<int> a(1 << k);
     iota(a.begin(), a.end(), 0);
-    long double t = 1000, gamma = 0.999;
-    //vector<long double> temperature = {t};
-    int cost = 0;
-    while (t > 0.001 && !a.empty()) {
-        /*if (temperature.back()/t > 2) {
-            temperature.push_back(t);
-            cout << t << endl;
-        }*/
+    shuffle(a.begin(), a.end(), randint);
+    a.resize(n);
+    int score = 0;
+    for (int q : a) {
+        score += get_score(q, a);
+    }
+    ld t = 1000, gamma = 0.999;
+    ld prev_t = t;
+    while (t > 0.001) {
+        if (prev_t > 1.1*t) {
+            cerr << t << endl;
+            prev_t = t;
+        }
         int ind = randint() % a.size();
-        int will_cost = change(ind, a);
-        if (will_cost >= cost || P(cost, will_cost, t)) {
-            change(ind, a);
-            cost = will_cost;
+        int x = randint() % (1 << k);
+        int delta = delta_score(ind, x, a);
+        if (delta >= 0 || P(score, score+delta, t)) {
+            a[ind] = x, score += delta;
         }
         t *= gamma;
     }
-    return a;
+    return pair{score, a};
 }
 
