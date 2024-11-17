@@ -1,28 +1,47 @@
 unsigned seed = chrono::steady_clock::now().time_since_epoch().count();
 mt19937 randint(seed);
 
-void gen() {
-    ofstream out("test.txt");
+int rand_int(int l, int r) {
+    int x = randint() % (r-l+1);
+    return x+l;
+}
+
+string rand_string(int n, int C) {
+    string s;
+    for (int q = 0; q < n; q++) {
+        char w = 'a'+randint() % C;
+        s += w;
+    }
+    return s;
+}
+
+void gen(int n, int C) {
+    ofstream out("../stress/test.txt");
+    out << n << endl;
+    //to do
 }
 
 void debug() {
-    int q2 = 0;
+    int q2 = 0, w;
     while (true) {
         cout << q2++ << endl;
-        gen();
-        system("easy.exe < test.txt > easy.txt");
-        system("hard.exe < test.txt > hard.txt");
-        ifstream in_easy("easy.txt");
-        ifstream in_hard("hard.txt");
-        char w;
-        vector<char> easy, hard;
-        while (in_easy >> w) {
-            easy.push_back(w);
+        int n = rand_int(1, 100), k = rand_int(1, 10);
+        gen(n, k);
+        int code1 = system("./easy < ../stress/test.txt > ../stress/easy.txt");
+        int code2 = system("./hard < ../stress/test.txt > ../stress/hard.txt");
+        if (code1 != 0 || code2 != 0) {
+            exit(57);
         }
-        while (in_hard >> w) {
-            hard.push_back(w);
+        ifstream in1("../stress/easy.txt");
+        ifstream in2("../stress/hard.txt");
+        vector<int> ans1, ans2;
+        while (in1 >> w) {
+            ans1.push_back(w);
         }
-        if (easy != hard) {
+        while (in2 >> w) {
+            ans2.push_back(w);
+        }
+        if (ans1 != ans2) {
             exit(179);
         }
     }
