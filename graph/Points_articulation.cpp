@@ -1,55 +1,49 @@
-vector<vector<int>> d;
-vector<int> up, tin;
-vector<bool> was;
-int time1 = 0;
+vector<vector<int>> d, comp;
+vector<int> tin, up;
+vector<pair<int, bool>> bypass;
+int time1;
 
-vector<vector<int>> comp, tree;
-vector<int> who, stack1;
-
-void make_comp(int vertex, int q) {
-    int ind = (int)comp.size();
-    comp.emplace_back();
-    tree.emplace_back();
-    int now = -1;
-    while (now != q) {
-        now = stack1.back();
-        comp.back().push_back(now);
-        if (who[now] != -1) {
-            tree[who[now]].push_back(ind);
-            tree[ind].push_back(who[now]);
+void build_comp(int vertex) {
+    comp.push_back({vertex});
+    while (bypass.back().first != vertex) {
+        if (bypass.back().second) {
+            comp.back().push_back(bypass.back().first);
         }
-        stack1.pop_back();
+        bypass.pop_back();
     }
-    comp.back().push_back(vertex);
-    if (who[vertex] == -1) {
-        comp.push_back({vertex});
-        tree.emplace_back();
-        who[vertex] = ind+1;
-    }
-    tree[who[vertex]].push_back(ind);
-    tree[ind].push_back(who[vertex]);
 }
 
-void DFS(int vertex, int parent) {
-    tin[vertex] = up[vertex] = time1++, was[vertex] = true;
-    stack1.push_back(vertex);
+void DFS_articulation(int vertex, int parent) {
+    tin[vertex] = up[vertex] = time1++;
+    bypass.emplace_back(vertex, true);
     for (int q : d[vertex]) {
-        if (!was[q]) {
-            DFS(q, vertex);
-            up[vertex] = min(up[vertex], up[q]);
+        if (tin[q] == -1) {
+            bypass.emplace_back(vertex, false);
+            DFS_articulation(q, vertex);
             if (up[q] >= tin[vertex]) {
-                make_comp(vertex, q);
+                build_comp(vertex);
             }
             up[vertex] = min(up[vertex], up[q]);
         } else if (q != parent) {
             up[vertex] = min(up[vertex], tin[q]);
         }
     }
-    if (parent == -1 && who[vertex] == (int)comp.size()-1) {
-        tree[tree.back()[0]].pop_back();
-        tree.pop_back();
-        comp.pop_back();
-        who[vertex] = -1;
+}
+
+vector<vector<int>> g;
+
+int make_articulation(int n) {
+    tin.assign(n, -1), up.assign(n, -1);
+    comp = {}, bypass = {}, time1 = 0;
+    DFS_articulation(0, -1);
+    int k = (int)comp.size();
+    g.assign(n+k, {});
+    for (int q = 0; q < k; q++) {
+        for (int q1 : comp[q]) {
+            g[q+n].push_back(q1);
+            g[q1].push_back(q+n);
+        }
     }
+    return k;
 }
 
