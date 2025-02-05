@@ -1,67 +1,64 @@
-vector<int> add(vector<int> a, const vector<int>& b) {
-    a.resize(max(a.size(), b.size()), 0);
-    for (int q = 0; q < b.size(); q++) {
-        a[q] += b[q];
-    }
-    return a;
-}
+int C, big_C;
+vector<int> zeros;
 
-vector<int> mul(vector<int> a, int x) {
-    for (int& q : a) {
-        q *= x;
-    }
-    return a;
-}
-
-auto split_in_half(const vector<int>& a, int m) {
-    int n = (int)a.size();
-    vector<int> a1, a2;
+vector<int> mul(const vector<int>& a, const vector<int>& s) {
+    int n = (int)a.size(), m = (int)s.size();
+    vector<int> ans(n+m-1);
     for (int q = 0; q < n; q++) {
-        (q < m ? a1 : a2).push_back(a[q]);
+        for (int q1 = 0; q1 < m; q1++) {
+            ans[q+q1] += a[q]*s[q1];
+            ans[q+q1] -= (ans[q+q1] >= big_C)*big_C;
+        }
     }
-    return pair{a1, a2};
+    for (int& q : ans) {
+        q %= C;
+    }
+    return ans;
 }
 
-vector<int> shift(vector<int> a, int t) {
-    reverse(a.begin(), a.end());
-    a.resize(a.size()+t, 0);
-    reverse(a.begin(), a.end());
+auto split_halves(const vector<int>& a, int len) {
+    vector<int> Q(a.begin(), a.begin()+len);
+    vector<int> P(a.begin()+len, a.end());
+    return pair{P, Q};
+}
+
+vector<int> operator+(const vector<int>& a, const vector<int>& s) {
+    int n = (int)a.size(), m = (int)s.size();
+    vector<int> ans(max(n, m));
+    for (int q = 0; q < max(n, m); q++) {
+        ans[q] = (q < n ? a[q] : 0)+(q < m ? s[q] : 0);
+        ans[q] -= (ans[q] >= C)*C;
+    }
+    return ans;
+}
+
+vector<int> operator-(vector<int> a) {
+    for (int& q : a) {
+        q = C-q-(q == 0)*C;
+    }
     return a;
 }
 
-vector<int> Karatsuba(const vector<int>& a, const vector<int>& b) {
-    int m = (int)a.size()/2;
-    if (m <= 57) {
-        m = (int)a.size();
-        vector<int> ans(2*m-1, 0);
-        for (int q = 0; q < m; q++) {
-            for (int q1 = 0; q1 < m; q1++) {
-                ans[q+q1] += a[q]*b[q1];
-            }
-        }
-        return ans;
+vector<int> Karatsuba(const vector<int>& a, const vector<int>& s) {
+    int n = (int)a.size(), m = (int)s.size();
+    if (min(n, m) < 57) {
+        return mul(a, s);
     }
-    auto [a1, a2] = split_in_half(a, m);
-    auto [b1, b2] = split_in_half(b, m);
-    vector<int> a1_b1 = Karatsuba(a1, b1), a2_b2 = Karatsuba(a2, b2);
-    vector<int> a1_a2_b1_b2 = Karatsuba(add(a1, a2), add(b1, b2));
-    vector<int> a1_b2_a2_b1 = add(a1_a2_b1_b2, mul(add(a1_b1, a2_b2), -1));
-    return add(a1_b1, shift(add(a1_b2_a2_b1, shift(a2_b2, m)), m));
+    int len = min(n/2, m/2);
+    auto [P1, Q1] = split_halves(a, len);
+    auto [P2, Q2] = split_halves(s, len);
+    vector<int> P1P2 = Karatsuba(P1, P2);
+    vector<int> Q1Q2 = Karatsuba(Q1, Q2);
+    vector<int> mid = Karatsuba(P1+Q1, P2+Q2);
+    mid = mid+(-P1P2)+(-Q1Q2);
+    mid.insert(mid.begin(), zeros.begin(), zeros.begin()+len);
+    P1P2.insert(P1P2.begin(), zeros.begin(), zeros.begin()+2*len);
+    return P1P2+mid+Q1Q2;
 }
 
-int degree_more(int n) {
-    int deg = 1;
-    while (deg < n) {
-        deg *= 2;
-    }
-    return deg;
-}
-
-vector<int> mul(vector<int> a, vector<int> b) {
-    int n = (int)max(a.size(), b.size());
-    n = degree_more(n);
-    a.resize(n, 0);
-    b.resize(n, 0);
-    return Karatsuba(a, b);
+vector<int> multiply(vector<int>& a, vector<int>& s) {
+    big_C = C*C*8;
+    zeros.assign(a.size()+s.size(), 0);
+    return Karatsuba(a, s);
 }
 
