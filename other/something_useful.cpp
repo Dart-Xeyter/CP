@@ -1,36 +1,26 @@
-unsigned seed = chrono::steady_clock::now().time_since_epoch().count();
+__builtin_ffsll(x); // index of the last 1 (0 if x == 0)
+__builtin_clzll(x); // number of leading zeros (x != 0)
+__builtin_popcountll(x); // number of 1
+
+bitset<17> b;
+b._Find_first(); // index of first 1 in bitset
+b._Find_next(3); // index of the next 1 in bitset
 
 
 
 
 
-#include <bits/stdc++.h>
-#define int long long
-#define ld long double
-#define p pair<int, int>
-#define endl '\n'
-const int INF = (int)1e9+1;
-
-using namespace __gnu_pbds;
-using namespace std;
-
-typedef tree<int, null_type, less<>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
+#pragma GCC optimize("O3,unroll-loops") // removes short cycles and repeats code of them instead
+// [for (int q = 0; q < 3; q++) {ans += q;}] converts to [ans += 1, ans += 2, ans += 3]
+#pragma GCC target("avx2,popcnt,lzcnt")
+// avx2/avx/sse/sse2/sse3/sse4 -> do multiple operations in parallel in cycles
+// popcnt/lzcnt/abm/bmi/bmi2 -> do some bitwise operations in 1 processor action
 
 
 
 
 
-#pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("avx2,popcnt")
-// avx2 -> avx/sse/sse2/sse3/sse4
-// popcnt -> lzcnt/bmi/bmi2/...
-
-
-
-
-
-set(CMAKE_CXX_FLAGS -Wl,--stack=2000000179)
-set(CMAKE_CXX_FLAGS -fsplit-stack)
-set(CMAKE_CXX_FLAGS -fsanitize=address,undefined)
-add_compile_options(-D LOCAL)
+set(CMAKE_CXX_FLAGS -fsplit-stack) // lets you create very huge arrays and vectors
+set(CMAKE_CXX_FLAGS -fsanitize=address,undefined) // helps to find RE and UB
+add_compile_definitions(-D_GLIBCXX_DEBUG -DLOCAL)
 

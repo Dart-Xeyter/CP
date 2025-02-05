@@ -1,34 +1,19 @@
-static constexpr int modules[] = {
-        1791179179,
-        1791791791,
-        570057179,
-        179179057,
-        57057179,
-        17957179, // 5
-        5700179,
-        2057179,
-        571799,
-        179057,
-        44179,
-        571794442013,
-        1057057179057179057,
+static constexpr int mods[] = {
+        1791179179, 1791791791,
+        1057057179057179057
 };
 
-static constexpr int multiplier_size = 2;
-static constexpr int multiplier[] = {
-        17957179, 179
+static constexpr int muls[] = {
+        17957179, 179,
+        179179057,
 };
 
 template <typename T>
 struct Hash {
-    const int C = 0, D;
+    const int C, D;
     vector<int> degs, hashs;
 
-    static int get_D(int type) {
-        return multiplier[min(multiplier_size-1, type)];
-    }
-
-    explicit Hash(const T& s, int type = 0): C(modules[type]), D(get_D(type)){
+    Hash(const T& s, int type = 0): C(mods[type]), D(muls[type]) {
         degs = {1}, hashs = {0};
         for (auto q : s) {
             degs.push_back(degs.back()*D % C);
