@@ -1,6 +1,12 @@
 #!/bin/bash
-# find -name "*.cpp" | sort -g | xargs ./format.sh > ICPC.tex
+
+### find -name "*.cpp" | sort -g | xargs ./format.sh > ICPC.tex
 # cat ICPC_algorithms.txt | xargs ./format.sh > ICPC.tex
+# ./format.sh ICPC_algorithms.txt >> ICPC.tex
+
+# geometry -> points
+# math -> pow, factor
+# graph -> LCA, DO (HLD)
 
 echo "\documentclass[a4paper, 10pt]{article}
 \usepackage[a4paper, left=3mm, right=3mm, top=19mm, bottom=6mm]{geometry}
@@ -14,8 +20,8 @@ echo "\documentclass[a4paper, 10pt]{article}
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhead{}
-\fancyhead[LO]{~~~MIPT (Divilkovskiy, Gorbunov, Savvateev)}
-\fancyhead[RO]{Page \thepage\;of ???~~~}
+\fancyhead[LO]{~~~MIPT (Gorbunov, Porai, Savvateev)}
+\fancyhead[RO]{Page \thepage\;of 50~~~}
 \fancyfoot{}
 \begin{document}
 \begin{center}

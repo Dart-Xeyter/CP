@@ -104,6 +104,89 @@
 |    };
 \end{verbatim}
 
+\section*{Ford\_Fulkerson}
+\begin{verbatim}
+|    struct Edge {
+|        int x, y, c, f = 0;
+|    };
+|    
+|    vector<vector<Edge>> d;
+|    vector<vector<int>> gf;
+|    vector<Edge> e;
+|    vector<bool> was;
+|    
+|    int push(int vertex, int x, int y) {
+|        if (vertex == y) {
+|            return x;
+|        }
+|        was[vertex] = true;
+|        for (int q : gf[vertex]) {
+|            Edge &q1 = e[q];
+|            if (!was[q1.y] && q1.c-q1.f > 0) {
+|                int x1 = push(q1.y, min(x, q1.c-q1.f), y);
+|                if (x1 != -1) {
+|                    q1.f += x1, e[q ^ 1].f -= x1;
+|                    return x1;
+|                }
+|            }
+|        }
+|        return -1;
+|    }
+|    
+|    bool cancel_way(int vertex, int y) {
+|        if (vertex == y) {
+|            return true;
+|        }
+|        was[vertex] = true;
+|        for (int q : gf[vertex]) {
+|            Edge &q1 = e[q];
+|            if (!was[q1.y] && q1.f > 0 && cancel_way(q1.y, y)) {
+|                q1.f--, e[q ^ 1].f++;
+|                return true;
+|            }
+|        }
+|        return false;
+|    }
+|    
+|    void cancel(int ind, int x, int y) {
+|        if (e[ind].f == 0) {
+|            return;
+|        }
+|        e[ind].c--, e[ind].f--;
+|        was.assign(d.size(), false);
+|        assert(cancel_way(x, e[ind].x));
+|        was.assign(d.size(), false);
+|        assert(cancel_way(e[ind].y, y));
+|    }
+|    
+|    void build_flow() {
+|        int n = (int)d.size();
+|        gf.assign(n, {}), e = {};
+|        for (int q = 0; q < n; q++) {
+|            for (Edge q1 : d[q]) {
+|                gf[q1.x].push_back((int)e.size());
+|                e.emplace_back(q1.x, q1.y, q1.c);
+|                gf[q1.y].push_back((int)e.size());
+|                e.emplace_back(q1.y, q1.x, 0);
+|            }
+|        }
+|    }
+|    
+|    int max_flow(int x, int y) {
+|        int n = (int)d.size();
+|        int size = 0;
+|        while (size != -1) {
+|            was.assign(n, false);
+|            size = push(x, INF, y);
+|        }
+|        int ans = 0;
+|        for (int q : gf[x]) {
+|            ans += e[q].f;
+|        }
+|        return ans;
+|    }
+\end{verbatim}
+
 \section*{Min\_cost}
 \begin{verbatim}
 |    struct Edge {
@@ -233,45 +316,6 @@
 |            edges = was_edges;
 |        }
 |    };
-\end{verbatim}
-
-\section*{Ford\_Bellman}
-\begin{verbatim}
-|    vector<vector<p>> d;
-|    vector<bool> was;
-|    vector<int> topsort;
-|    
-|    void top_sort(int vertex) {
-|        was[vertex] = true;
-|        for (p q : d[vertex]) {
-|            if (!was[q.first]) {
-|                top_sort(q.first);
-|            }
-|        }
-|        topsort.push_back(vertex);
-|    }
-|    
-|    vector<int> Ford_Bellman(int vertex) {
-|        int n = (int)d.size();
-|        was.assign(n, false), topsort = {};
-|        top_sort(vertex);
-|        reverse(topsort.begin(), topsort.end());
-|        vector<int> dist(n, INF);
-|        dist[vertex] = 0;
-|        bool flag = true;
-|        for (int q2 = 0; q2 < n; q2++) {
-|            flag = false;
-|            for (int q : topsort) {
-|                for (p q1 : d[q]) {
-|                    if (dist[q1.first] > dist[q]+q1.second) {
-|                        dist[q1.first] = dist[q]+q1.second;
-|                        flag = true;
-|                    }
-|                }
-|            }
-|        }
-|        return flag ? vector<int>() : dist;
-|    }
 \end{verbatim}
 
 \section*{LCA\_linear\_memory}
@@ -525,59 +569,53 @@
 
 \section*{Points\_articulation}
 \begin{verbatim}
-|    vector<vector<int>> d;
-|    vector<int> up, tin;
-|    vector<bool> was;
-|    int time1 = 0;
+|    vector<vector<int>> d, comp;
+|    vector<int> tin, up;
+|    vector<pair<int, bool>> bypass;
+|    int time1;
 |    
-|    vector<vector<int>> comp, tree;
-|    vector<int> who, stack1;
-|    
-|    void make_comp(int vertex, int q) {
-|        int ind = (int)comp.size();
-|        comp.emplace_back();
-|        tree.emplace_back();
-|        int now = -1;
-|        while (now != q) {
-|            now = stack1.back();
-|            comp.back().push_back(now);
-|            if (who[now] != -1) {
-|                tree[who[now]].push_back(ind);
-|                tree[ind].push_back(who[now]);
+|    void build_comp(int vertex) {
+|        comp.push_back({vertex});
+|        while (bypass.back().first != vertex) {
+|            if (bypass.back().second) {
+|                comp.back().push_back(bypass.back().first);
 |            }
-|            stack1.pop_back();
+|            bypass.pop_back();
 |        }
-|        comp.back().push_back(vertex);
-|        if (who[vertex] == -1) {
-|            comp.push_back({vertex});
-|            tree.emplace_back();
-|            who[vertex] = ind+1;
-|        }
-|        tree[who[vertex]].push_back(ind);
-|        tree[ind].push_back(who[vertex]);
 |    }
 |    
-|    void DFS(int vertex, int parent) {
-|        tin[vertex] = up[vertex] = time1++, was[vertex] = true;
-|        stack1.push_back(vertex);
+|    void DFS_articulation(int vertex, int parent) {
+|        tin[vertex] = up[vertex] = time1++;
+|        bypass.emplace_back(vertex, true);
 |        for (int q : d[vertex]) {
-|            if (!was[q]) {
-|                DFS(q, vertex);
-|                up[vertex] = min(up[vertex], up[q]);
+|            if (tin[q] == -1) {
+|                bypass.emplace_back(vertex, false);
+|                DFS_articulation(q, vertex);
 |                if (up[q] >= tin[vertex]) {
-|                    make_comp(vertex, q);
+|                    build_comp(vertex);
 |                }
 |                up[vertex] = min(up[vertex], up[q]);
 |            } else if (q != parent) {
 |                up[vertex] = min(up[vertex], tin[q]);
 |            }
 |        }
-|        if (parent == -1 && who[vertex] == (int)comp.size()-1) {
-|            tree[tree.back()[0]].pop_back();
-|            tree.pop_back();
-|            comp.pop_back();
-|            who[vertex] = -1;
+|    }
+|    
+|    vector<vector<int>> g;
+|    
+|    int make_articulation(int n) {
+|        tin.assign(n, -1), up.assign(n, -1);
+|        comp = {}, bypass = {}, time1 = 0;
+|        DFS_articulation(0, -1);
+|        int k = (int)comp.size();
+|        g.assign(n+k, {});
+|        for (int q = 0; q < k; q++) {
+|            for (int q1 : comp[q]) {
+|                g[q+n].push_back(q1);
+|                g[q1].push_back(q+n);
+|            }
 |        }
+|        return k;
 |    }
 \end{verbatim}
 
@@ -1006,48 +1044,8 @@
 
 \section*{FFT\_modulo}
 \begin{verbatim}
-|    int pow1(int x, int y, int C) {
-|        if (y == 0) {
-|            return 1;
-|        }
-|        if (y % 2 == 0) {
-|            return pow1(x*x % C, y/2, C);
-|        }
-|        return pow1(x, y-1, C)*x % C;
-|    }
-|    
-|    vector<int> get_primes(int n) {
-|        vector<int> primes;
-|        int sqrt1 = sqrtl(n);
-|        for (int q = 2; q <= sqrt1; q++) {
-|            if (n % q == 0) {
-|                primes.push_back(q);
-|            }
-|            while (n % q == 0) {
-|                n /= q;
-|            }
-|        }
-|        if (n > 1) {
-|            primes.push_back(n);
-|        }
-|        return primes;
-|    }
-|    
-|    int find_g(int C) {
-|        vector<int> primes = get_primes(C-1);
-|        for (int q = 1;; q++) {
-|            bool flag = true;
-|            for (int q1 : primes) {
-|                if (pow1(q, (C-1)/q1, C) == 1) {
-|                    flag = false;
-|                    break;
-|                }
-|            }
-|            if (flag) {
-|                return q;
-|            }
-|        }
-|    }
+|    const int g = 31;
+|    vector<int> rev_bits;
 |    
 |    int reverse_bits(int x, int log1) {
 |        int y = 0;
@@ -1057,35 +1055,41 @@
 |        return y;
 |    }
 |    
-|    void FFT(vector<int> &a, int C, int g, int log1) {
-|        int n = a.size();
-|        vector<bool> good(n, true);
+|    void build_rev_bits(int log1) {
+|        int n = (1 << log1);
+|        rev_bits.assign(n, -1);
 |        for (int q = 0; q < n; q++) {
-|            if (good[q]) {
-|                int q1 = reverse_bits(q, log1);
-|                swap(a[q], a[q1]);
-|                good[q1] = false;
-|            }
+|            int q1 = reverse_bits(q, log1);
+|            rev_bits[q] = min(q, q1);
+|        }
+|    }
+|    
+|    void FFT(int* a, int log1) {
+|        int n = (1 << log1);
+|        for (int q = 0; q < n; q++) {
+|            swap(a[q], a[rev_bits[q]]);
 |        }
 |        for (int q = 1; q < n; q <<= 1) {
-|            int root = pow1(g, (C-1)/(q << 1), C);
+|            int root = pow1(g, (C-1)/(q << 1));
 |            for (int q1 = 0; q1 < n; q1 += (q << 1)) {
 |                int now = 1;
 |                for (int q2 = q1; q2 < q1+q; q2++) {
 |                    int x = a[q2], y = a[q2+q]*now % C;
-|                    a[q2] = x+y-(x+y >= C)*C, a[q2+q] = x-y+(x-y < 0)*C;
+|                    a[q2] = x+y-(x+y >= C)*C;
+|                    a[q2+q] = x-y+(x-y < 0)*C;
 |                    now = now*root % C;
 |                }
 |            }
 |        }
 |    }
 |    
-|    void IFFT(vector<int> &a, int C, int g, int log1) {
-|        FFT(a, C, g, log1);
-|        reverse(a.begin()+1, a.end());
-|        int rev_n = pow1(a.size(), C-2, C);
-|        for (int &q : a) {
-|            q = q*rev_n % C;
+|    void IFFT(int* a, int log1) {
+|        int n = (1 << log1);
+|        FFT(a, log1);
+|        reverse(a+1, a+n);
+|        int rev_n = pow1(n, C-2);
+|        for (int q = 0; q < n; q++) {
+|            a[q] *= rev_n, a[q] %= C;
 |        }
 |    }
 |    
@@ -1097,33 +1101,109 @@
 |        return log1;
 |    }
 |    
-|    vector<int> multiply(vector<int> a, vector<int> b, int C) {
-|        int log1 = get_degree(a.size()+b.size());
-|        int n = (1 << log1), g = find_g(C);
-|        a.resize(n, 0), b.resize(n, 0);
-|        FFT(a, C, g, log1), FFT(b, C, g, log1);
+|    vector<int> multiply(vector<int>& aa, vector<int>& bb) {
+|        int len = (int)aa.size()+(int)bb.size()-1;
+|        int log1 = get_degree(len), n = (1 << log1);
+|        build_rev_bits(log1);
+|        int a[n], b[n];
+|        fill(a, a+n, 0), fill(b, b+n, 0);
+|        copy(aa.begin(), aa.end(), a);
+|        copy(bb.begin(), bb.end(), b);
+|        FFT(a, log1), FFT(b, log1);
 |        for (int q = 0; q < n; q++) {
 |            a[q] = a[q]*b[q] % C;
 |        }
-|        IFFT(a, C, g, log1);
-|        auto w = find_if_not(a.rbegin(), a.rend(), [](int x) {return x == 0;});
-|        a.resize(max(1LL, (int)(a.rend()-w)));
+|        IFFT(a, log1);
+|        vector<int> ans(a, a+len);
+|        return ans;
+|    }
+\end{verbatim}
+
+\section*{online\_FFT}
+\begin{verbatim}
+|    const int g = 31;
+|    
+|    int reverse_bits(int x, int log1) {
+|        int y = 0;
+|        for (int q = 0; q < log1; q++) {
+|            y |= (((x >> q) & 1) << (log1-q-1));
+|        }
+|        return y;
+|    }
+|    
+|    void FFT(vector<int>& a, int log1) {
+|        int n = (1 << log1);
+|        for (int q = 0; q < n; q++) {
+|            int rev = reverse_bits(q, log1);
+|            swap(a[q], a[min(q, rev)]);
+|        }
+|        for (int q = 1; q < n; q <<= 1) {
+|            int root = pow1(g, (C-1)/(q << 1));
+|            for (int q1 = 0; q1 < n; q1 += (q << 1)) {
+|                int now = 1;
+|                for (int q2 = q1; q2 < q1+q; q2++) {
+|                    int x = a[q2], y = a[q2+q]*now % C;
+|                    a[q2] = x+y-(x+y >= C)*C;
+|                    a[q2+q] = x-y+(x-y < 0)*C;
+|                    now = now*root % C;
+|                }
+|            }
+|        }
+|    }
+|    
+|    void IFFT(vector<int>& a, int log1) {
+|        int n = (1 << log1);
+|        FFT(a, log1);
+|        reverse(a.begin()+1, a.end());
+|        int rev_n = pow1(n, C-2);
+|        for (int& q : a) {
+|            q *= rev_n, q %= C;
+|        }
+|    }
+|    
+|    int get_degree(int n) {
+|        int num_zeros = __builtin_clz(n-1);
+|        return 32-num_zeros;
+|    }
+|    
+|    vector<int> multiply(vector<int> a, vector<int> b) {
+|        int len = (int)a.size()+(int)b.size()-1;
+|        int log1 = get_degree(len), n = (1 << log1);
+|        a.resize(n, 0), b.resize(n, 0);
+|        FFT(a, log1), FFT(b, log1);
+|        for (int q = 0; q < n; q++) {
+|            a[q] *= b[q], a[q] %= C;
+|        }
+|        IFFT(a, log1), a.resize(len);
 |        return a;
+|    }
+|    
+|    void add_seg(vector<int>& a, vector<int>& b, vector<int>& c, int q, int len, int r) {
+|        vector<int> a1(a.begin()+q-len, a.begin()+q);
+|        vector<int> b1(b.begin(), b.begin()+min(r, 2*len));
+|        vector<int> c1 = multiply(a1, b1);
+|        for (int q1 = 0; q1 < min(r, len); q1++) {
+|            c[q+q1] += c1[q1+len-1];
+|        }
+|    }
+|    
+|    vector<int> online_FFT(vector<int>& b, int c0, int n) {
+|        vector<int> c(2*n+1, 0); // if a == c
+|        c[0] = c0;
+|        for (int q = 1; q <= n; q++) {
+|            int deg = __builtin_ctz(q), len = (1 << deg);
+|            add_seg(c, b, c, q, len, q);
+|            add_seg(b, c, c, q, len, q-len);
+|            int rev_q = pow1(q, C-2); // for Bell's numbers
+|            c[q] = c[q] % C*rev_q % C;
+|        }
+|        c.resize(n+1);
+|        return c;
 |    }
 \end{verbatim}
 
 \section*{C\_k\_n\_any\_modulo}
 \begin{verbatim}
-|    int pow1(int x, int y, int C) {
-|        if (y == 0) {
-|            return 1;
-|        }
-|        if (y % 2 == 0) {
-|            return pow1(x*x % C, y/2, C);
-|        }
-|        return pow1(x, y-1, C)*x % C;
-|    }
-|    
 |    int phi(int n, const vector<int> primes) {
 |        int ans = n;
 |        for (int q : primes) {
@@ -1169,23 +1249,6 @@
 |            ans = ans*pow1(q, deg, C) % C;
 |        }
 |        return ans;
-|    }
-|    
-|    vector<int> factor(int n) {
-|        vector<int> primes;
-|        int sqrt1 = sqrt(n);
-|        for (int q = 2; q <= sqrt1; q++) {
-|            if (n % q == 0) {
-|                primes.push_back(q);
-|            }
-|            while (n % q == 0) {
-|                n /= q;
-|            }
-|        }
-|        if (n > 1) {
-|            primes.push_back(n);
-|        }
-|        return primes;
 |    }
 \end{verbatim}
 
@@ -1261,67 +1324,6 @@
 \begin{verbatim}
 |    #define ld long double
 |    const ld E = 1e-8;
-|    
-|    struct Pt {
-|        ld x, y;
-|    
-|        Pt(): x(0), y(0) {}
-|        Pt(ld x, ld y): x(x), y(y) {}
-|    
-|        bool operator==(const Pt& point) const {
-|            return abs(x-point.x) < E && abs(y-point.y) < E;
-|        }
-|    
-|        bool operator<(const Pt& point) const {
-|            return x+E < point.x || abs(x-point.x) < E && y+E < point.y;
-|        }
-|    
-|        Pt operator+(const Pt& point) const {
-|            return {x+point.x, y+point.y};
-|        }
-|    
-|        Pt operator-(const Pt& point) const {
-|            return {x-point.x, y-point.y};
-|        }
-|    
-|        ld get_abs() const {
-|            return hypotl(x, y);
-|        }
-|    
-|        Pt norm(ld len) const {
-|            ld k = len/get_abs();
-|            return {x*k, y*k};
-|        }
-|    };
-|    
-|    istream& operator>>(istream& in, Pt& point) {
-|        in >> point.x >> point.y;
-|        return in;
-|    }
-|    
-|    ld dot(Pt x, Pt y) {
-|        return x.x*y.x+x.y*y.y;
-|    }
-|    
-|    ld cross(Pt x, Pt y) {
-|        return x.x*y.y-x.y*y.x;
-|    }
-|    
-|    ld abs(Pt x) {
-|        return x.get_abs();
-|    }
-|    
-|    ld abs_2(Pt x) {
-|        return x.x*x.x+x.y*x.y;
-|    }
-|    
-|    ld dist(Pt x, Pt y) {
-|        return abs(x-y);
-|    }
-|    
-|    ld dist_2(Pt x, Pt y) {
-|        return abs_2(x-y);
-|    }
 |    
 |    ld angle(Pt x, Pt y) {
 |        // angle between (1, 0) и (sin, cos)
@@ -1464,57 +1466,6 @@
 \section*{polygons}
 \begin{verbatim}
 |    #define ld long double
-|    
-|    struct Pt {
-|        int x, y;
-|    
-|        Pt(): x(0), y(0) {}
-|        Pt(int x, int y): x(x), y(y) {}
-|    
-|        auto operator<=>(const Pt& other) const = default;
-|    
-|        Pt operator+(const Pt& point) const {
-|            return {x+point.x, y+point.y};
-|        }
-|    
-|        Pt operator-(const Pt& point) const {
-|            return {x-point.x, y-point.y};
-|        }
-|    };
-|    
-|    istream& operator>>(istream& in, Pt& point) {
-|        in >> point.x >> point.y;
-|        return in;
-|    }
-|    
-|    ostream& operator<<(ostream& out, const Pt& point) {
-|        out << point.x << ' ' << point.y;
-|        return out;
-|    }
-|    
-|    int dot(Pt x, Pt y) {
-|        return x.x*y.x+x.y*y.y;
-|    }
-|    
-|    int cross(Pt x, Pt y) {
-|        return x.x*y.y-x.y*y.x;
-|    }
-|    
-|    ld abs(Pt x) {
-|        return hypot(x.x, x.y);
-|    }
-|    
-|    int abs_2(Pt x) {
-|        return x.x*x.x+x.y*x.y;
-|    }
-|    
-|    ld dist(Pt x, Pt y) {
-|        return abs(x-y);
-|    }
-|    
-|    int dist_2(Pt x, Pt y) {
-|        return abs_2(x-y);
-|    }
 |    
 |    ld angle(Pt x, Pt y) {
 |        // angle between (1, 0) и (sin, cos)
@@ -1664,21 +1615,18 @@
 
 \section*{Binary\_Gauss}
 \begin{verbatim}
-|    const int MAX_N = 301, MAX_M = 300;
+|    #include <tr2/dynamic_bitset>
+|    using Bitset = tr2::dynamic_bitset<>;
 |    
 |    struct Gauss {
-|        vector<bitset<MAX_M>> a;
-|        vector<bitset<MAX_N>> s;
-|        vector<bool> was;
-|        int n, C;
+|        vector<Bitset> a;
+|        int n, m;
 |    
-|        Gauss(vector<string> &a1) {
-|            n = a1.size(), C = a1[0].size();
-|            a.assign(n, 0), s.assign(n, 0), was.assign(n, false);
+|        explicit Gauss(auto& a_): n(a_.size()), m(a_[0].size()) {
 |            for (int q = 0; q < n; q++) {
-|                s[q][q] = true;
-|                for (int q1 = 0; q1 < C; q1++) {
-|                    a[q][q1] = (a1[q][q1] == '1');
+|                a.emplace_back(m);
+|                for (int q1 = 0; q1 < m; q1++) {
+|                    a[q][q1] = a_[q][q1];
 |                }
 |            }
 |        }
@@ -1686,28 +1634,38 @@
 |        void subtract(int q, int q1) {
 |            for (int q2 = 0; q2 < n; q2++) {
 |                if (q != q2 && a[q2][q1]) {
-|                    a[q2] ^= a[q], s[q2] ^= s[q];
+|                    a[q2] ^= a[q];
 |                }
 |            }
 |        }
 |    
 |        void gauss() {
-|            int cnt = 0, q1 = 0;
-|            while (cnt < n && q1 < C) {
-|                int ind = -1;
-|                for (int q2 = 0; q2 < n; q2++) {
-|                    if (!was[q2] && a[q2][q1]) {
-|                        ind = q2;
-|                        break;
-|                    }
+|            for (int q = 0; q < n; q++) {
+|                int q1 = (int)a[q].find_first();
+|                if (q1 != m) {
+|                    subtract(q, q1);
 |                }
-|                if (ind == -1) {
-|                    q1++;
+|            }
+|        }
+|    
+|        auto annihilator() const {
+|            vector<int> leader(n);
+|            for (int q = 0; q < n; q++) {
+|                leader[q] = (int)a[q].find_first();
+|            }
+|            vector<Bitset> ans;
+|            for (int q1 = 0; q1 < m; q1++) {
+|                if (ranges::find(leader, q1) != leader.end()) {
 |                    continue;
 |                }
-|                subtract(ind, q1++);
-|                was[ind] = true, cnt++;
+|                ans.emplace_back(m+1);
+|                for (int q = 0; q < n; q++) {
+|                    ans.back()[leader[q]] = a[q][q1];
+|                }
+|                ans.back().resize(m);
+|                ans.back()[q1] = true;
 |            }
+|            return ans;
 |        }
 |    };
 \end{verbatim}
@@ -2274,13 +2232,44 @@
 
 \section*{something\_useful}
 \begin{verbatim}
-|    unsigned seed = chrono::steady_clock::now().time_since_epoch().count();
+|    __builtin_ffsll(x); // index of the last 1 (0 if x == 0)
+|    __builtin_clzll(x); // number of leading zeros (x != 0)
+|    __builtin_popcountll(x); // number of 1
+|    
+|    bitset<17> b;
+|    b._Find_first(); // index of first 1 in bitset
+|    b._Find_next(3); // index of the next 1 in bitset
 |    
 |    
 |    
 |    
 |    
-|    #include <bits/stdc++.h>
+|    #pragma GCC optimize("O3,unroll-loops") // removes short cycles and repeats code of them instead
+|    // [for (int q = 0; q < 3; q++) {ans += q;}] converts to [ans += 1, ans += 2, ans += 3]
+|    #pragma GCC target("avx2,popcnt,lzcnt")
+|    // avx2/avx/sse/sse2/sse3/sse4 -> do multiple operations in parallel in cycles
+|    // popcnt/lzcnt/abm/bmi/bmi2 -> do some bitwise operations in 1 processor action
+|    
+|    
+|    
+|    
+|    
+|    set(CMAKE_CXX_FLAGS -fsplit-stack) // lets you create very huge arrays and vectors
+|    set(CMAKE_CXX_FLAGS -fsanitize=address,undefined) // helps to find RE and UB
+|    add_compile_definitions(-D_GLIBCXX_DEBUG -DLOCAL)
+\end{verbatim}
+
+\section*{STL\_useful}
+\begin{verbatim}
+|    #include <tr2/dynamic_bitset>
+|    typedef tr2::dynamic_bitset<> Bitset;
+|    Bitset a(3);
+|    
+|    
+|    
+|    
+|    
+|    #include <bits/extc++.h>
 |    #define int long long
 |    #define ld long double
 |    #define p pair<int, int>
@@ -2292,23 +2281,22 @@
 |    
 |    typedef tree<int, null_type, less<>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
 |    
+|    struct my_hash {
+|        const int seed = chrono::steady_clock::now().time_since_epoch().count();
 |    
+|        static int hash(int x) {
+|            x += 0x9e3779b97f4a7c15;
+|            x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
+|            x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
+|            return x ^ (x >> 31);
+|        }
 |    
+|        int operator()(int x) const {
+|            return hash(x+seed);
+|        }
+|    };
 |    
-|    
-|    #pragma GCC optimize("O3,unroll-loops")
-|    #pragma GCC target("avx2,popcnt")
-|    // avx2 -> avx/sse/sse2/sse3/sse4
-|    // popcnt -> lzcnt/bmi/bmi2/...
-|    
-|    
-|    
-|    
-|    
-|    set(CMAKE_CXX_FLAGS -Wl,--stack=2000000179)
-|    set(CMAKE_CXX_FLAGS -fsplit-stack)
-|    set(CMAKE_CXX_FLAGS -fsanitize=address,undefined)
-|    add_compile_options(-D LOCAL)
+|    gp_hash_table<int, null_type, my_hash> s;
 \end{verbatim}
 
 \section*{Aho\_Corasick}
@@ -2367,37 +2355,22 @@
 
 \section*{Hash}
 \begin{verbatim}
-|    static constexpr int modules[] = {
-|            1791179179,
-|            1791791791,
-|            570057179,
-|            179179057,
-|            57057179,
-|            17957179, // 5
-|            5700179,
-|            2057179,
-|            571799,
-|            179057,
-|            44179,
-|            571794442013,
-|            1057057179057179057,
+|    static constexpr int mods[] = {
+|            1791179179, 1791791791,
+|            1057057179057179057
 |    };
 |    
-|    static constexpr int multiplier_size = 2;
-|    static constexpr int multiplier[] = {
-|            17957179, 179
+|    static constexpr int muls[] = {
+|            17957179, 179,
+|            179179057,
 |    };
 |    
 |    template <typename T>
 |    struct Hash {
-|        const int C = 0, D;
+|        const int C, D;
 |        vector<int> degs, hashs;
 |    
-|        static int get_D(int type) {
-|            return multiplier[min(multiplier_size-1, type)];
-|        }
-|    
-|        explicit Hash(const T& s, int type = 0): C(modules[type]), D(get_D(type)){
+|        Hash(const T& s, int type = 0): C(mods[type]), D(muls[type]) {
 |            degs = {1}, hashs = {0};
 |            for (auto q : s) {
 |                degs.push_back(degs.back()*D % C);
@@ -2626,6 +2599,7 @@
 |    };
 \end{verbatim}
 
+\newpage
 \section*{Z\_function}
 \begin{verbatim}
 |    vector<int> z_func(const string& s) {
@@ -2647,7 +2621,7 @@
 |    }
 \end{verbatim}
 
-\section*{pointers}
+\section*{Persistent\_DO}
 \begin{verbatim}
 |    struct Node {
 |        int x;
@@ -3179,10 +3153,10 @@
 \end{verbatim}
 
 \newpage
-
-\section*{algorithms}
+\section*{ICPC\_algorithms}
 \begin{verbatim}
 |    ./graph/flow/Dinitz.cpp
+|    ./graph/flow/Ford_Fulkerson.cpp
 |    ./graph/flow/Min_cost.cpp
 |    ./graph/shortest_paths/Ford_Bellman.cpp
 |    ./graph/tree/LCA/LCA_linear_memory.cpp
@@ -3196,6 +3170,7 @@
 |    ./math/delivers/Pollard.cpp
 |    ./math/FFT/FFT_divide.cpp
 |    ./math/FFT/FFT_modulo.cpp
+|    ./math/FFT/online_FFT.cpp
 |    ./math/functions/C_k_n_any_modulo.cpp
 |    ./math/functions/N_th_root.cpp
 |    ./math/geometry/double.cpp
@@ -3210,6 +3185,7 @@
 |    ./other/dp/Li_Chao.cpp
 |    ./other/Annealing_simulation.cpp
 |    ./other/something_useful.cpp
+|    ./other/STL_useful.cpp
 |    ./string/Aho_Corasick.cpp
 |    ./string/Hash.cpp
 |    ./string/Manacher.cpp

@@ -1,6 +1,6 @@
 ./graph/flow/Dinitz.cpp
+./graph/flow/Ford_Fulkerson.cpp
 ./graph/flow/Min_cost.cpp
-./graph/shortest_paths/Ford_Bellman.cpp
 ./graph/tree/LCA/LCA_linear_memory.cpp
 ./graph/tree/Compressed_tree.cpp
 ./graph/tree/HLD.cpp
@@ -12,6 +12,7 @@
 ./math/delivers/Pollard.cpp
 ./math/FFT/FFT_divide.cpp
 ./math/FFT/FFT_modulo.cpp
+./math/FFT/online_FFT.cpp
 ./math/functions/C_k_n_any_modulo.cpp
 ./math/functions/N_th_root.cpp
 ./math/geometry/double.cpp
@@ -26,6 +27,7 @@
 ./other/dp/Li_Chao.cpp
 ./other/Annealing_simulation.cpp
 ./other/something_useful.cpp
+./other/STL_useful.cpp
 ./string/Aho_Corasick.cpp
 ./string/Hash.cpp
 ./string/Manacher.cpp
