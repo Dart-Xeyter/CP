@@ -1,60 +1,61 @@
+template <typename T>
 struct DO {
-    vector<int> do_arr, mins;
-    vector<bool> degs;
-    int len;
- 
-    DO(vector<int> a) {
-        len = 1;
-        while (len < a.size()) {
-            len <<= 1;
+    vector<T> a;
+    int n, len = 1;
+
+    T func(T x, T y) {return max(x, y);}
+    T I = -INF;
+
+    DO(const vector<T>& init) {
+        n = (int)init.size();
+        while (len < n) {
+            len *= 2;
         }
-        do_arr.assign(len << 1, 0), mins.assign(len << 1, INF);
-        degs.assign(len << 1, false), degs[len] = true;
-        for (int q = len; q < a.size()+len; q++) {
-            do_arr[q] = mins[q] = a[q-len];
+        a.assign(2*len, I);
+        for (int q = len; q < len+n; q++) {
+            a[q] = init[q-len];
         }
         for (int q = len-1; q > 0; q--) {
-            do_arr[q] = do_arr[q << 1]+do_arr[(q << 1)+1];
-            mins[q] = min(mins[q << 1], mins[(q << 1)+1]);
-            degs[q] = degs[q << 1];
+            a[q] = func(a[2*q], a[2*q+1]);
         }
     }
- 
-    void change(int q, int x) {
-        do_arr[q+len] = x, mins[q+len] = x;
-        q = ((q+len) >> 1);
+
+    void change(int q, T x) {
+        a[q+len] = x;
+        q = (q+len) >> 1;
         while (q > 0) {
-            do_arr[q] = do_arr[q << 1]+do_arr[(q << 1)+1];
-            mins[q] = min(mins[q << 1], mins[(q << 1)+1]);
+            a[q] = func(a[2*q], a[2*q+1]);
             q >>= 1;
         }
     }
- 
-    int ans(int l, int r) {
-        if (l >= r) {
-            return 0;
+
+    T ans(int l, int r) {
+        l += len-1, r += len;
+        T res_l = I, res_r = I;
+        while (r-l > 1) {
+            if ((l & 1) ^ 1) {
+                res_l = func(res_l, a[l ^ 1]);
+            }
+            if (r & 1) {
+                res_r = func(a[r ^ 1], res_r);
+            }
+            l >>= 1, r >>= 1;
         }
-        l += len, r += len-1;
-        int sum1 = 0;
-        while (l < r) {
-            sum1 += (l & 1)*do_arr[l];
-            l = ((l+1) >> 1);
-            sum1 += ((r & 1) ^ 1)*do_arr[r];
-            r = ((r-1) >> 1);
-        }
-        return sum1+(l == r)*do_arr[l];
+        return func(res_l, res_r);
     }
- 
-    int left_less(int q, int x) {
+
+    int right_more(int q, T x) {
         q += len;
-        while (!degs[q] && mins[q] >= x) {
-            q = ((q-1) >> 1);
+        while (q > 0 && ((q & 1) || a[q ^ 1] <= x)) {
+            q >>= 1;
         }
-        if (mins[q] >= x) {
-            return -1;
+        q ^= 1;
+        if (a[q] <= x) {
+            return n;
         }
         while (q < len) {
-            q = (q << 1)+(mins[(q << 1)+1] < x);
+            q <<= 1;
+            q ^= (a[q] <= x);
         }
         return q-len;
     }
