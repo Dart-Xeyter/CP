@@ -1,47 +1,34 @@
-int pow1(int x, int y, int C) {
-    if (y == 0) {
-        return 1;
+p build_gcd_coefs(int a, int b) {
+    if (b == 0) {
+        return {1, 0};
     }
-    if (y % 2 == 0) {
-        return pow1(x*x % C, y/2, C);
-    }
-    return pow1(x, y-1, C)*x % C;
+    int m = a/b;
+    auto [y, x] = build_gcd_coefs(b, a-m*b);
+    return {x, y-m*x};
 }
 
-vector<int> factor(int n) {
-    vector<int> primes;
-    int sqrt1 = sqrt(n);
-    for (int q = 2; q <= sqrt1; q++) {
-        if (n % q == 0) {
-            primes.push_back(q);
-        }
-        while (n % q == 0) {
-            n /= q;
-        }
+p gcd_coef(int a, int b) {
+    int mx = max(a, b), mn = min(a, b);
+    auto [x, y] = build_gcd_coefs(mx, mn);
+    if (a < b) {
+        swap(x, y);
     }
-    if (n > 1) {
-        primes.push_back(n);
-    }
-    return primes;
-}
-
-int phi(int n) {
-    vector<int> fact = factor(n);
-    int ans = n;
-    for (int q : fact) {
-        ans -= ans/q;
-    }
-    return ans;
+    return {x, y};
 }
 
 p ax_by_c(int a, int b, int c) {
-    int t = __gcd(a, b);
-    if (c % t != 0) {
+    auto [x, y] = gcd_coef(a, b);
+    int g = a*x+b*y;
+    if (c % g != 0) {
         return {-1, -1};
     }
-    a /= t, b /= t, c /= t;
-    int x = (c*pow1(a, phi(b)-1, b) % b+b) % b;
-    int y = (c-a*x)/b;
+    a /= g, b /= g, c /= g;
+    x *= c, y *= c;
+    int t = x/b;
+    x -= b*t, y += a*t;
+    if (x < 0) {
+        x += b, y -= a;
+    }
     return {x, y};
 }
 

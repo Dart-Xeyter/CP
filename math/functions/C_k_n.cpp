@@ -1,13 +1,13 @@
 vector<int> fact, rev_fact;
 
-int pow1(int x, int y, int z = C) {
+int pow1(int x, int y) {
     if (y == 0) {
         return 1;
     }
     if (y % 2 == 0) {
-        return pow1(x*x % z, y/2, z);
+        return pow1(x*x % C, y/2);
     }
-    return pow1(x, y-1, z)*x % z;
+    return pow1(x, y-1)*x % C;
 }
 
 void make_fact(int n) {
@@ -15,7 +15,7 @@ void make_fact(int n) {
     for (int q = 1; q <= n; q++) {
         fact.push_back(fact.back()*q % C);
     }
-    rev_fact = {pow1(fact.back(), C-2, C)};
+    rev_fact = {pow1(fact.back(), C-2)};
     for (int q = n; q > 0; q--) {
         rev_fact.push_back(rev_fact.back()*q % C);
     }
