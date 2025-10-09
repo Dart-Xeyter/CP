@@ -1,50 +1,41 @@
-struct Edge {
-    int x, y, num;
-
-    Edge(int x1, int y1, int num1): x(x1), y(y1), num(num1) {}
-};
-
-bool operator<(Edge edge, Edge edge1) {
-    return edge.num < edge1.num;
-}
-
-vector<vector<Edge>> d;
+vector<vector<int>> d;
 vector<int> tin, up;
 vector<bool> was;
-int time1 = 0;
-set<Edge> bridge;
+int time1;
+set<p> bridges;
 
-void bridges(int vertex, int num) {
-    tin[vertex] = up[vertex] = time1++, was[vertex] = true;
-    for (Edge q : d[vertex]) {
-        if (!was[q.y]) {
-            bridges(q.y, q.num);
-            up[vertex] = min(up[vertex], up[q.y]);
-            if (up[q.y] > tin[vertex]) {
-                bridge.insert(q);
+void DFS_bridges(int vertex, int parent) {
+    was[vertex] = true;
+    tin[vertex] = up[vertex] = time1++;
+    for (int q : d[vertex]) {
+        if (!was[q]) {
+            DFS_bridges(q, vertex);
+            up[vertex] = min(up[vertex], up[q]);
+            if (up[q] > tin[vertex]) {
+                bridges.emplace(vertex, q);
+                bridges.emplace(q, vertex);
             }
-        } else if (q.num != num) {
-            up[vertex] = min(up[vertex], tin[q.y]);
+        } else if (q != parent) {
+            up[vertex] = min(up[vertex], tin[q]);
         }
     }
 }
 
-vector<vector<pair<int, p>>> d1;
-vector<vector<int>> comp;
-vector<p> num;
+vector<vector<int>> g, comp;
+vector<int> who;
 
-void cond(int vertex, int now) {
-    was[vertex] = false, num[vertex] = {now, comp[now].size()};
-    comp[now].push_back(vertex);
-    for (Edge q: d[vertex]) {
-        if (!was[q.y] && bridge.find(q) != bridge.end()) {
-            cond(q.y, now);
-        } else if (!was[q.y]) {
-            d1.emplace_back();
-            d1[now].push_back({comp.size(), {q.x, q.y}});
-            d1[comp.size()].push_back({now, {q.y, q.x}});
+void DFS_condancation(int vertex, int c) {
+    was[vertex] = true, who[vertex] = c;
+    comp[c].push_back(vertex);
+    for (int q : d[vertex]) {
+        if (!was[q] && !bridges.contains({vertex, q})) {
+            DFS_condancation(q, c);
+        } else if (!was[q]) {
+            int new_c = (int)g.size();
+            g[c].push_back(new_c);
+            g.push_back({c});
             comp.emplace_back();
-            cond(q.y, (int)comp.size()-1);
+            DFS_condancation(q, new_c);
         }
     }
 }

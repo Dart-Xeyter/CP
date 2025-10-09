@@ -4,7 +4,7 @@ int time1 = 0, log1 = 20;
 
 void make_LCA(int vertex, int parent, int h) {
     tin[vertex] = time1++, height[vertex] = h;
-    up[vertex].push_back((parent == -1 ? vertex : parent));
+    up[vertex].push_back(parent == -1 ? vertex : parent);
     for (int q = 1; q < log1; q++) {
         up[vertex].push_back(up[up[vertex][q-1]][q-1]);
     }
@@ -32,10 +32,10 @@ int LCA(int x, int y) {
     return up[x][0];
 }
 
-vector<vector<int>> tree;
+vector<vector<p>> tree;
 
 int make_compressed_tree(vector<int> a) {
-    int n = a.size();
+    int n = (int)a.size();
     sort(a.begin(), a.end(), [](int x, int y) {return tin[x] < tin[y];});
     for (int q = 1; q < n; q++) {
         a.push_back(LCA(a[q-1], a[q]));
@@ -44,15 +44,15 @@ int make_compressed_tree(vector<int> a) {
     for (int q : a) {
         tree[q] = {};
     }
-    n = a.size();
     vector<int> stack = {a[0]};
-    for (int q = 1; q < n; q++) {
+    for (int q = 1; q < 2*n-1; q++) {
         while (tout[stack.back()] < tin[a[q]]) {
             stack.pop_back();
         }
         if (stack.back() != a[q]) {
-            tree[stack.back()].push_back(a[q]);
-            tree[a[q]].push_back(stack.back());
+            int len = height[a[q]]-height[stack.back()];
+            tree[stack.back()].emplace_back(a[q], len);
+            tree[a[q]].emplace_back(stack.back(), len);
             stack.push_back(a[q]);
         }
     }
