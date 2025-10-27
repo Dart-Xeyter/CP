@@ -1,9 +1,9 @@
 const int E = 26;
-vector<vector<int>> d = {vector<int>(E, -1)};
-vector<int> term = {0}, suflink, num_term;
 const char FIRST = 'a';
+vector<vector<int>> d = {vector<int>(E, -1)};
+vector<int> term = {0};
 
-int add_symbol(int vertex, char w) {
+int go_create(int vertex, char w) {
     w -= FIRST;
     if (d[vertex][w] == -1) {
         d[vertex][w] = (int)d.size();
@@ -16,34 +16,39 @@ int add_symbol(int vertex, char w) {
 int add_string(const string& s) {
     int vertex = 0;
     for (char q : s) {
-        vertex = add_symbol(vertex, q);
+        vertex = go_create(vertex, q);
     }
     term[vertex]++;
     return vertex;
 }
 
-int build_suflink(int vertex, int q) {
-    int q1 = suflink[vertex];
-    while (q1 != -1 && d[q1][q] == -1) {
-        q1 = suflink[q1];
+vector<vector<int>> go;
+vector<int> suf;
+
+int step(int vertex, int q) {
+    if (vertex == -1) {
+        return 0;
     }
-    return q1 == -1 ? 0 : d[q1][q];
+    int x = d[vertex][q], par = suf[vertex];
+    int y = (par == -1 ? 0 : go[par][q]);
+    return x == -1 ? y : x;
 }
 
-void make_suflinks() {
-    suflink.assign(d.size(), -1), num_term.assign(d.size(), 0);
+void build_suflinks() {
+    int m = (int)d.size();
+    go = d, suf.assign(m, -1);
     queue<int> a;
     a.push(0);
-    num_term[0] = term[0];
     while (!a.empty()) {
-        int vertex = a.front();
+        int x = a.front();
         a.pop();
-        for (int q_ = 0; q_ < E; q_++) {
-            int q = d[vertex][q_];
-            if (q != -1) {
-                suflink[q] = build_suflink(vertex, q_);
-                num_term[q] = term[q]+num_term[suflink[q]];
-                a.push(q);
+        int num = (suf[x] == -1 ? 0 : term[suf[x]]);
+        term[x] += num;
+        for (int q = 0; q < E; q++) {
+            go[x][q] = step(x, q);
+            if (d[x][q] != -1) {
+                suf[d[x][q]] = step(suf[x], q);
+                a.push(d[x][q]);
             }
         }
     }
