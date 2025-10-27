@@ -3,7 +3,7 @@ struct Polygon {
     int n;
 
     Polygon(const vector<Pt>& a_): a(a_) {
-        auto w = std::unique(a.begin(), a.end());
+        auto w = unique(a.begin(), a.end());
         n = w-a.begin();
         if (n == 0) {
             return;
@@ -37,32 +37,44 @@ int belong_convex(Polygon& a, Pt x) {
     return make_line(a.a[l], a.a[r]).side(x);
 }
 
-Polygon convex_hull(vector<Pt>& A) {
-    if (A.empty()) {
+bool need_pop_back(vector<Pt>& a, Pt x) {
+    int m = (int)a.size();
+    return m >= 2 && cross(a[m-1]-a[m-2], x-a[m-2]) <= Num(0);
+}
+
+vector<Pt> build_envelope(vector<Pt>& a) {
+    int n = (int)a.size();
+    vector<Pt> ans = {a[0]};
+    for (int q = 1; q < n; q++) {
+        while (need_pop_back(ans, a[q])) {
+            ans.pop_back();
+        }
+        ans.push_back(a[q]);
+    }
+    return ans;
+}
+
+Polygon convex_hull(vector<Pt> a) {
+    if (a.empty()) {
         return {{}};
     }
-    Pt pt = ranges::min(A, {}, [](Pt x) {return pair{x.x.val, x.y.val};});
-    auto aa = views::filter(A, [&pt](Pt x) {return x != pt;});
-    vector<Pt> a(aa.begin(), aa.end());
-    ranges::sort(a, [&pt](Pt x, Pt y) {
-        Num cr = cross(x-pt, y-pt);
-        return cr > Num(0) || cr == Num(0) && dot(pt-x, y-x) < Num(0);
-    });
-    vector<Pt> hull = {pt};
-    for (Pt q : views::join(vector{a, {pt}})) {
-        while (hull.size() > 1) {
-            Pt prev = hull[(int)hull.size()-2];
-            if (cross(hull.back()-prev, q-prev) > Num(0)) {
-                break;
-            }
-            hull.pop_back();
+    ranges::sort(a, {}, [](Pt x) {return pair{x.x, x.y};});
+    vector<Pt> up = {a[0]}, down = {a[0]};
+    for (Pt pt : a) {
+        Num c = cross(a.back()-a[0], pt-a[0]);
+        if (c > Num(0)) {
+            up.push_back(pt);
+        } else if (c < Num(0)) {
+            down.push_back(pt);
         }
-        hull.push_back(q);
     }
-    if (hull.size() == 2 && !a.empty()) {
-        return {{pt, a.back()}};
-    }
-    return {{hull.begin(), hull.end()-1}};
+    up.push_back(a.back());
+    down.push_back(a.back());
+    reverse(up.begin(), up.end());
+    up = build_envelope(up);
+    down = build_envelope(down);
+    down.insert(down.end(), up.begin()+1, up.end()-1);
+    return {down};
 }
 
 bool add_line(deque<Line>& hull, Line line) {

@@ -1,73 +1,61 @@
 struct Line {
     int k, b;
-
-    Line(): k(0), b(INF) {}
-    Line(int k, int b): k(k), b(b) {}
-
-    int value(int x) const {
+ 
+    int val(int x) {
         return k*x+b;
     }
 };
-
-struct Node {
-    Line line;
-    Node *l, *r;
-
-    explicit Node(Line line): line(line), l(nullptr), r(nullptr) {}
-
-    void make_sons() {
-        if (l == nullptr) {
-            l = new Node(Line());
+ 
+struct Li_Chao {
+    vector<Line> a;
+    int len = 1;
+ 
+    Li_Chao(int n) {
+        while (len < n) {
+            len *= 2;
         }
-        if (r == nullptr) {
-            r = new Node(Line());
+        a.assign(2*len, {0, INF});
+    }
+ 
+    void descent(int l, int r, int q, Line line) {
+        while (q < 2*len) {
+            int m = (l+r) >> 1;
+            if (a[q].val(m) > line.val(m)) {
+                swap(a[q], line);
+            }
+            if (a[q].val(l) > line.val(l)) {
+                r = m;
+            } else {
+                l = m;
+            }
+            q *= 2, q += (l == m);
         }
     }
-};
-
-struct Li_Chao { // min
-    Node* root;
-    int MIN, MAX;
-
-    Li_Chao(int MIN, int MAX): MIN(MIN), MAX(MAX), root(new Node(Line())) {}
-
-    static void add(int l, int r, Node* tree, Line line) {
-        int m = (l+r)/2;
-        if (line.value(m) < tree->line.value(m)) {
-            swap(line, tree->line);
-        }
-        if (r-l == 1) {
+ 
+    void add(int l, int r, int L, int R, int q, Line line) {
+        if (l >= R || L >= r) {
             return;
         }
-        tree->make_sons();
-        if (line.k < tree->line.k) {
-            add(m, r, tree->r, line);
-        } else {
-            add(l, m, tree->l, line);
+        if (L <= l && r <= R) {
+            descent(l, r, q, line);
+            return;
         }
+        int m = (l+r) >> 1;
+        add(l, m, L, R, 2*q, line);
+        add(m, r, L, R, 2*q+1, line);
     }
-
-    void add(Line line) const {
-        add(MIN, MAX, root, line);
+ 
+    void add(int l, int r, Line line) {
+        add(0, len, l, r, 1, line);
     }
-
-    static int ans(int l, int r, Node* tree, int x) {
-        int answer = tree->line.value(x);
-        if (r-l == 1) {
-            return answer;
+ 
+    int ans(int x) {
+        int q = x+len, res = INF;
+        while (q > 0) {
+            res = min(res, a[q].val(x));
+            q >>= 1;
         }
-        tree->make_sons();
-        int m = (l+r)/2;
-        if (x < m) {
-            answer = min(answer, ans(l, m, tree->l, x));
-        } else {
-            answer = min(answer, ans(m, r, tree->r, x));
-        }
-        return answer;
-    }
-
-    int ans(int x) const {
-        return ans(MIN, MAX, root, x);
+        return res;
     }
 };
 

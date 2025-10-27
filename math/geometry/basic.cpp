@@ -104,7 +104,7 @@ Pt inter(Line line1, Line line2) {
 }
 
 bool on_seg(Pt a, Pt b, Pt x) {
-    return cross(b-a, x-a) == Num(0) && dot(a-x, b-x) <= Num(0);
+    return cross(x-a, x-b) == Num(0) && dot(x-a, x-b) <= Num(0);
 }
 
 struct Cir {
