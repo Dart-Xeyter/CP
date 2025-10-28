@@ -10,11 +10,63 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhead{}
-\fancyhead[LO]{~~~MIPT (Gorbunov, Porai, Savvateev)}
+\fancyhead[LO]{~~~MIPT (Barsukov, Porai, Savvateev)}
 \fancyhead[RO]{Page \thepage\;of 50~~~}
 \fancyfoot{}
 \begin{document}
 \begin{center}
+
+\section*{Articulation\_points}
+\begin{verbatim}
+|    vector<vector<int>> d, comp;
+|    vector<int> tin, up;
+|    vector<pair<int, bool>> bypass;
+|    int time1;
+|    
+|    void build_comp(int vertex) {
+|        comp.push_back({vertex});
+|        while (bypass.back().first != vertex) {
+|            if (bypass.back().second) {
+|                comp.back().push_back(bypass.back().first);
+|            }
+|            bypass.pop_back();
+|        }
+|    }
+|    
+|    void DFS_articulation(int vertex, int parent) {
+|        tin[vertex] = up[vertex] = time1++;
+|        bypass.emplace_back(vertex, true);
+|        for (int q : d[vertex]) {
+|            if (tin[q] == -1) {
+|                bypass.emplace_back(vertex, false);
+|                DFS_articulation(q, vertex);
+|                if (up[q] >= tin[vertex]) {
+|                    build_comp(vertex);
+|                }
+|                up[vertex] = min(up[vertex], up[q]);
+|            } else if (q != parent) {
+|                up[vertex] = min(up[vertex], tin[q]);
+|            }
+|        }
+|    }
+|    
+|    vector<vector<int>> g;
+|    
+|    int make_articulation(int n) {
+|        tin.assign(n, -1), up.assign(n, -1);
+|        comp = {}, bypass = {}, time1 = 0;
+|        DFS_articulation(0, -1);
+|        int k = (int)comp.size();
+|        g.assign(n+k, {});
+|        for (int q = 0; q < k; q++) {
+|            for (int q1 : comp[q]) {
+|                g[q+n].push_back(q1);
+|                g[q1].push_back(q+n);
+|            }
+|        }
+|        return k;
+|    }
+\end{verbatim}
 
 \section*{Dinitz}
 \begin{verbatim}
@@ -318,323 +370,6 @@
 |    };
 \end{verbatim}
 
-\section*{LCA\_linear\_memory}
-\begin{verbatim}
-|    vector<vector<int>> d;
-|    vector<int> parent, height, jump;
-|    
-|    void make_LCA(int vertex, int p1, int h) {
-|        parent[vertex] = p1, height[vertex] = h;
-|        if (p1 != -1 && height[jump[p1]]-height[p1] == height[jump[jump[p1]]]-height[jump[p1]]) {
-|            jump[vertex] = jump[jump[p1]];
-|        } else {
-|            jump[vertex] = (p1 == -1 ? vertex : p1);
-|        }
-|        for (int q : d[vertex]) {
-|            if (q != p1) {
-|                make_LCA(q, vertex, h+1);
-|            }
-|        }
-|    }
-|    
-|    int k_ancestor(int vertex, int k) {
-|        int h = height[vertex]-k;
-|        while (height[vertex] > h) {
-|            vertex = (height[jump[vertex]] >= h ? jump[vertex] : parent[vertex]);
-|        }
-|        return vertex;
-|    }
-|    
-|    int LCA(int x, int y) {
-|        if (height[x] < height[y]) {
-|            swap(x, y);
-|        }
-|        x = k_ancestor(x, height[x]-height[y]);
-|        while (x != y) {
-|            if (jump[x] != jump[y]) {
-|                x = jump[x], y = jump[y];
-|            } else {
-|                x = parent[x], y = parent[y];
-|            }
-|        }
-|        return x;
-|    }
-\end{verbatim}
-
-\section*{Compressed\_tree}
-\begin{verbatim}
-|    vector<vector<int>> tree;
-|    
-|    int make_compressed_tree(vector<int> a) {
-|        int n = a.size();
-|        sort(a.begin(), a.end(), [](int x, int y) {return tin[x] < tin[y];});
-|        for (int q = 1; q < n; q++) {
-|            a.push_back(LCA(a[q-1], a[q]));
-|        }
-|        sort(a.begin(), a.end(), [](int x, int y) {return tin[x] < tin[y];});
-|        for (int q : a) {
-|            tree[q] = {};
-|        }
-|        n = a.size();
-|        vector<int> stack = {a[0]};
-|        for (int q = 1; q < n; q++) {
-|            while (tout[stack.back()] < tin[a[q]]) {
-|                stack.pop_back();
-|            }
-|            if (stack.back() != a[q]) {
-|                tree[stack.back()].push_back(a[q]);
-|                tree[a[q]].push_back(stack.back());
-|                stack.push_back(a[q]);
-|            }
-|        }
-|        return a[0];
-|    }
-\end{verbatim}
-
-\section*{HLD}
-\begin{verbatim}
-|    vector<vector<int>> d;
-|    vector<int> parent, sizes, tin, tout, height, order, up;
-|    vector<int> a;
-|    
-|    void for_HLD(int vertex, int p1) {
-|        int now = 1;
-|        for (int q : d[vertex]) {
-|            if (q != p1) {
-|                for_HLD(q, vertex);
-|                now += sizes[q];
-|            }
-|        }
-|        sizes[vertex] = now, parent[vertex] = p1;
-|        sort(d[vertex].begin(), d[vertex].end(), [](int x, int y) {return sizes[x] > sizes[y];});
-|    }
-|    
-|    void DFS_HLD(int vertex, int p1, int h) {
-|        tin[vertex] = order.size(), height[vertex] = h;
-|        up[vertex] = (p1 == -1 || d[p1][0] != vertex ? vertex : up[p1]);
-|        order.push_back(a[vertex]);
-|        for (int q : d[vertex]) {
-|            if (q != p1) {
-|                DFS_HLD(q, vertex, h+1);
-|            }
-|        }
-|        tout[vertex] = order.size();
-|    }
-|    
-|    DO make_HLD() {
-|        int n = d.size();
-|        sizes.assign(n, -1), parent.assign(n, -1), height.assign(n, -1);
-|        tin.assign(n, -1), tout.assign(n, -1), up.assign(n, -1);
-|        for_HLD(0, -1);
-|        DFS_HLD(0, -1, 0);
-|        return DO(order);
-|    }
-|    
-|    void update_way(int x, int y, int k, DO &do_arr) {
-|        if (height[up[x]] < height[up[y]]) {
-|            swap(x, y);
-|        }
-|        while (up[x] != up[y]) {
-|            do_arr.update(0, do_arr.len, tin[up[x]], tin[x]+1, 1, k);
-|            x = parent[up[x]];
-|            if (height[up[x]] < height[up[y]]) {
-|                swap(x, y);
-|            }
-|        }
-|        do_arr.update(0, do_arr.len, min(tin[x], tin[y]), max(tin[x], tin[y])+1, 1, k);
-|    }
-|    
-|    int ans_way(int x, int y, DO &do_arr) {
-|        if (height[up[x]] < height[up[y]]) {
-|            swap(x, y);
-|        }
-|        int ans = 0;
-|        while (up[x] != up[y]) {
-|            ans += do_arr.ans(0, do_arr.len, tin[up[x]], tin[x]+1, 1);
-|            x = parent[up[x]];
-|            if (height[up[x]] < height[up[y]]) {
-|                swap(x, y);
-|            }
-|        }
-|        ans += do_arr.ans(0, do_arr.len, min(tin[x], tin[y]), max(tin[x], tin[y])+1, 1);
-|        return ans;
-|    }
-\end{verbatim}
-
-\section*{Bridges}
-\begin{verbatim}
-|    struct Edge {
-|        int x, y, num;
-|    
-|        Edge(int x1, int y1, int num1): x(x1), y(y1), num(num1) {}
-|    };
-|    
-|    bool operator<(Edge edge, Edge edge1) {
-|        return edge.num < edge1.num;
-|    }
-|    
-|    vector<vector<Edge>> d;
-|    vector<int> tin, up;
-|    vector<bool> was;
-|    int time1 = 0;
-|    set<Edge> bridge;
-|    
-|    void bridges(int vertex, int num) {
-|        tin[vertex] = up[vertex] = time1++, was[vertex] = true;
-|        for (Edge q : d[vertex]) {
-|            if (!was[q.y]) {
-|                bridges(q.y, q.num);
-|                up[vertex] = min(up[vertex], up[q.y]);
-|                if (up[q.y] > tin[vertex]) {
-|                    bridge.insert(q);
-|                }
-|            } else if (q.num != num) {
-|                up[vertex] = min(up[vertex], tin[q.y]);
-|            }
-|        }
-|    }
-|    
-|    vector<vector<pair<int, p>>> d1;
-|    vector<vector<int>> comp;
-|    vector<p> num;
-|    
-|    void cond(int vertex, int now) {
-|        was[vertex] = false, num[vertex] = {now, comp[now].size()};
-|        comp[now].push_back(vertex);
-|        for (Edge q: d[vertex]) {
-|            if (!was[q.y] && bridge.find(q) != bridge.end()) {
-|                cond(q.y, now);
-|            } else if (!was[q.y]) {
-|                d1.emplace_back();
-|                d1[now].push_back({comp.size(), {q.x, q.y}});
-|                d1[comp.size()].push_back({now, {q.y, q.x}});
-|                comp.emplace_back();
-|                cond(q.y, (int)comp.size()-1);
-|            }
-|        }
-|    }
-\end{verbatim}
-
-\section*{CSS}
-\begin{verbatim}
-|    vector<vector<int>> d, d1, cond, comp;
-|    vector<int> who, topsort;
-|    vector<bool> was;
-|    
-|    void top_sort(int vertex) {
-|        was[vertex] = true;
-|        for (int q : d[vertex]) {
-|            if (!was[q]) {
-|                top_sort(q);
-|            }
-|        }
-|        topsort.push_back(vertex);
-|    }
-|    
-|    void DFS_CSS(int vertex) {
-|        was[vertex] = true, who[vertex] = (int)comp.size()-1;
-|        comp.back().push_back(vertex);
-|        for (int q : d1[vertex]) {
-|            if (!was[q]) {
-|                DFS_CSS(q);
-|            } else if (who[q] != who[vertex]) {
-|                cond[who[q]].push_back(who[vertex]);
-|            }
-|        }
-|    }
-|    
-|    void CSS() {
-|        int n = (int)d.size();
-|        d1.assign(n, {}), comp = {}, cond = {};
-|        who.assign(n, -1), topsort = {}, was.assign(n, false);
-|        for (int q = 0; q < n; q++) {
-|            if (!was[q]) {
-|                top_sort(q);
-|            }
-|            for (int q1 : d[q]) {
-|                d1[q1].push_back(q);
-|            }
-|        }
-|        reverse(topsort.begin(), topsort.end());
-|        was.assign(n, false);
-|        for (int q : topsort) {
-|            if (!was[q]) {
-|                comp.emplace_back();
-|                cond.emplace_back();
-|                DFS_CSS(q);
-|            }
-|        }
-|    }
-\end{verbatim}
-
-\section*{Points\_articulation}
-\begin{verbatim}
-|    vector<vector<int>> d, comp;
-|    vector<int> tin, up;
-|    vector<pair<int, bool>> bypass;
-|    int time1;
-|    
-|    void build_comp(int vertex) {
-|        comp.push_back({vertex});
-|        while (bypass.back().first != vertex) {
-|            if (bypass.back().second) {
-|                comp.back().push_back(bypass.back().first);
-|            }
-|            bypass.pop_back();
-|        }
-|    }
-|    
-|    void DFS_articulation(int vertex, int parent) {
-|        tin[vertex] = up[vertex] = time1++;
-|        bypass.emplace_back(vertex, true);
-|        for (int q : d[vertex]) {
-|            if (tin[q] == -1) {
-|                bypass.emplace_back(vertex, false);
-|                DFS_articulation(q, vertex);
-|                if (up[q] >= tin[vertex]) {
-|                    build_comp(vertex);
-|                }
-|                up[vertex] = min(up[vertex], up[q]);
-|            } else if (q != parent) {
-|                up[vertex] = min(up[vertex], tin[q]);
-|            }
-|        }
-|    }
-|    
-|    vector<vector<int>> g;
-|    
-|    int make_articulation(int n) {
-|        tin.assign(n, -1), up.assign(n, -1);
-|        comp = {}, bypass = {}, time1 = 0;
-|        DFS_articulation(0, -1);
-|        int k = (int)comp.size();
-|        g.assign(n+k, {});
-|        for (int q = 0; q < k; q++) {
-|            for (int q1 : comp[q]) {
-|                g[q+n].push_back(q1);
-|                g[q1].push_back(q+n);
-|            }
-|        }
-|        return k;
-|    }
-\end{verbatim}
-
-\section*{Eulerian\_cycle}
-\begin{verbatim}
-|    vector<int> Euler;
-|    vector<set<int>> copy_d;
-|    
-|    void make_bypass(int vertex) {
-|        while (!copy_d[vertex].empty()) {
-|            int q = *copy_d[vertex].begin();
-|            copy_d[vertex].erase(q);
-|            copy_d[q].erase(vertex);
-|            make_bypass(q);
-|        }
-|        Euler.push_back(vertex);
-|    }
-\end{verbatim}
-
 \section*{Kun}
 \begin{verbatim}
 |    vector<vector<int>> d;
@@ -732,6 +467,1378 @@
 |    }
 \end{verbatim}
 
+\section*{HLD}
+\begin{verbatim}
+|    vector<vector<int>> d;
+|    vector<int> parents, sizes, height;
+|    
+|    void DFS_sizes(int vertex, int parent, int h) {
+|        parents[vertex] = parent;
+|        sizes[vertex] = 1, height[vertex] = h;
+|        for (int q : d[vertex]) {
+|            if (q != parent) {
+|                DFS_sizes(q, vertex, h+1);
+|                sizes[vertex] += sizes[q];
+|            }
+|        }
+|        ranges::sort(d[vertex], {}, [](int x) {return -sizes[x];});
+|    }
+|    
+|    vector<int> up, tin, tout;
+|    vector<int> order;
+|    
+|    void DFS_create(int vertex, int parent, bool first) {
+|        tin[vertex] = (int)order.size();
+|        order.push_back(vertex);
+|        up[vertex] = (first ? up[parent] : vertex);
+|        first = true;
+|        for (int q : d[vertex]) {
+|            if (q != parent) {
+|                DFS_create(q, vertex, first);
+|                first = false;
+|            }
+|        }
+|        tout[vertex] = (int)order.size();
+|    }
+|    
+|    DO do_arr({});
+|    
+|    void build_HLD(int vertex, vector<int>& a) {
+|        int n = (int)a.size();
+|        parents.assign(n, -1), sizes.assign(n, -1), height.assign(n, -1);
+|        DFS_sizes(vertex, -1, 0);
+|        up.assign(n, -1), tin.assign(n, -1), tout.assign(n, -1), order = {};
+|        DFS_create(vertex, -1, false);
+|        vector<int> for_do(n);
+|        for (int q = 0; q < n; q++) {
+|            for_do[q] = a[order[q]];
+|        }
+|        do_arr = DO(for_do);
+|    }
+|    
+|    int process_way(int x, int y, auto& func) {
+|        while (up[x] != up[y]) {
+|            if (height[up[x]] < height[up[y]]) {
+|                swap(x, y);
+|            }
+|            int z = up[x];
+|            func(tin[z], tin[x]+1);
+|            x = parents[z];
+|        }
+|        if (height[x] < height[y]) {
+|            swap(x, y);
+|        }
+|        func(tin[y], tin[x]+1);
+|        return y;
+|    }
+\end{verbatim}
+
+\section*{LCA\_linear\_memory}
+\begin{verbatim}
+|    vector<vector<int>> d;
+|    vector<int> parent, height, jump;
+|    
+|    void make_LCA(int vertex, int p1, int h) {
+|        parent[vertex] = p1, height[vertex] = h;
+|        if (p1 != -1 && height[jump[p1]]-height[p1] == height[jump[jump[p1]]]-height[jump[p1]]) {
+|            jump[vertex] = jump[jump[p1]];
+|        } else {
+|            jump[vertex] = (p1 == -1 ? vertex : p1);
+|        }
+|        for (int q : d[vertex]) {
+|            if (q != p1) {
+|                make_LCA(q, vertex, h+1);
+|            }
+|        }
+|    }
+|    
+|    int k_ancestor(int vertex, int k) {
+|        int h = height[vertex]-k;
+|        while (height[vertex] > h) {
+|            vertex = (height[jump[vertex]] >= h ? jump[vertex] : parent[vertex]);
+|        }
+|        return vertex;
+|    }
+|    
+|    int LCA(int x, int y) {
+|        if (height[x] < height[y]) {
+|            swap(x, y);
+|        }
+|        x = k_ancestor(x, height[x]-height[y]);
+|        while (x != y) {
+|            if (jump[x] != jump[y]) {
+|                x = jump[x], y = jump[y];
+|            } else {
+|                x = parent[x], y = parent[y];
+|            }
+|        }
+|        return x;
+|    }
+\end{verbatim}
+
+\section*{Berlekamp}
+\begin{verbatim}
+|    const int C = 1791179179;
+|    
+|    int pow1(int x, int y) {
+|        if (y == 0) {
+|            return 1;
+|        }
+|        if (y % 2 == 0) {
+|            return pow1(x*x % C, y/2);
+|        }
+|        return pow1(x, y-1)*x % C;
+|    }
+|    
+|    vector<int> Berlekamp(vector<int> &rec) {
+|        int n = rec.size(), q1 = 0;
+|        while (q1 < n && rec[q1] == 0) {
+|            q1++;
+|        }
+|        if (q1 == n) {
+|            return {};
+|        }
+|        int t = rec[q1] % C, q2 = q1++;
+|        vector<int> was, now = vector<int>(q1, 0);
+|        for (; q1 < n; q1++) {
+|            int d = -rec[q1] % C;
+|            for (int q = 1; q <= now.size(); q++) {
+|                d = (d+now[q-1]*rec[q1-q]) % C;
+|            }
+|            if (d == 0) {
+|                continue;
+|            }
+|            vector<int> will = now;
+|            while (will.size() < q1-q2+(int)was.size()) {
+|                will.push_back(0);
+|            }
+|            int mul = d*pow1(t, C-2) % C;
+|            will[q1-q2-1] = (will[q1-q2-1]+mul) % C;
+|            for (int q = 0; q < was.size(); q++) {
+|                will[q1-q2+q] = (will[q1-q2+q]-was[q]*mul) % C;
+|            }
+|            was = now, now = will, t = d, q2 = q1;
+|        }
+|        for (int& q : now) {
+|            q = (q+C) % C, q -= (q > C/2)*C;
+|        }
+|        while (!now.empty() && now.back() == 0) {
+|            now.pop_back();
+|        }
+|        return now;
+|    }
+|    
+|    int stupid(int n) {
+|        //to do
+|    }
+|    
+|    int find_n(int n, bool flag = false) {
+|        int k = 57;
+|        vector<int> a = {0};
+|        for (int q = 1; q < (flag ? n+1 : k); q++) {
+|            a.push_back(stupid(q));
+|        }
+|        vector<int> rec = Berlekamp(a);
+|        if (flag) {
+|            for (int q : rec) {
+|                cout << q << ' ';
+|            }
+|            cout << endl;
+|        }
+|        for (int q = k; q <= n; q++) {
+|            a.push_back(0);
+|            for (int q1 = 1; q1 <= rec.size(); q1++) {
+|                a.back() += a[q-q1]*rec[q1-1] % C;
+|            }
+|            a.back() = (a.back() % C+C) % C;
+|        }
+|        return a[n];
+|    }
+\end{verbatim}
+
+\section*{FFT\_complex}
+\begin{verbatim}
+|    const ld PI = numbers::pi_v<ld>;
+|    using Complex = complex<ld>;
+|    
+|    int reverse_bits(int x, int log1) {
+|        int y = 0;
+|        for (int q = 0; q < log1; q++) {
+|            y |= (((x >> q) & 1) << (log1-q-1));
+|        }
+|        return y;
+|    }
+|    
+|    vector<int> rev_bits;
+|    
+|    void build_rev_bits(int log1) {
+|        int n = (1 << log1);
+|        rev_bits.assign(n, -1);
+|        for (int q = 0; q < n; q++) {
+|            int q1 = reverse_bits(q, log1);
+|            rev_bits[q] = min(q, q1);
+|        }
+|    }
+|    
+|    void FFT(vector<Complex>& a, int log1) {
+|        int n = (1 << log1);
+|        for (int q = 0; q < n; q++) {
+|            swap(a[q], a[rev_bits[q]]);
+|        }
+|        for (int q = 1; q < n; q <<= 1) {
+|            Complex root(cosl(PI/q), sinl(PI/q));
+|            for (int q1 = 0; q1 < n; q1 += (q << 1)) {
+|                Complex now = 1;
+|                for (int q2 = q1; q2 < q1+q; q2++) {
+|                    Complex x = a[q2], y = a[q2+q]*now;
+|                    a[q2] = x+y, a[q2+q] = x-y;
+|                    now *= root;
+|                }
+|            }
+|        }
+|    }
+|    
+|    void IFFT(vector<Complex>& a, int log1) {
+|        int n = (1 << log1);
+|        FFT(a, log1);
+|        reverse(a.begin()+1, a.end());
+|        for (Complex& q : a) {
+|            q /= n;
+|        }
+|    }
+|    
+|    int get_degree(int n) {
+|        int log1 = 0;
+|        while ((1 << log1) < n) {
+|            log1++;
+|        }
+|        return log1;
+|    }
+|    
+|    vector<Complex> multiply(vector<Complex> a, vector<Complex> b) {
+|        int len = (int)a.size()+(int)b.size()-1;
+|        int log1 = get_degree(len), n = (1 << log1);
+|        build_rev_bits(log1);
+|        a.resize(n, 0), b.resize(n, 0);
+|        FFT(a, log1), FFT(b, log1);
+|        for (int q = 0; q < n; q++) {
+|            a[q] = a[q]*b[q];
+|        }
+|        IFFT(a, log1);
+|        return {a.begin(), a.begin()+len};
+|    }
+\end{verbatim}
+
+\section*{FFT\_divide}
+\begin{verbatim}
+|    vector<int> operator*(vector<int> a, int x) {
+|        x = (x % C+C) % C;
+|        for (int& q : a) {
+|            q *= x, q %= C;
+|        }
+|        return a;
+|    }
+|    
+|    vector<int> inverse(vector<int>& A, int n) {
+|        assert(A[0] != 0);
+|        vector<int> B0 = {pow1(A[0], C-2)};
+|        int N = A.size();
+|        while (B0.size() <= n) {
+|            int k = B0.size(), len = min(2*k, N);
+|            vector<int> A_k(A.begin(), A.begin()+len);
+|            auto A_B0 = multiply(A_k, B0);
+|            A_B0.erase(A_B0.begin(), A_B0.begin()+k);
+|            if (A_B0.empty()) {
+|                break;
+|            }
+|            auto B1 = multiply(A_B0*(-1), B0);
+|            B0.insert(B0.end(), B1.begin(), B1.begin()+k);
+|        }
+|        B0.resize(n+1, 0);
+|        return B0;
+|    }
+|    
+|    vector<int> divide(vector<int> A, vector<int> B) {
+|        int n = A.size(), m = B.size();
+|        if (n < m) {
+|            return {0};
+|        }
+|        int k = n-m+1;
+|        reverse(A.begin(), A.end());
+|        A.resize(k);
+|        reverse(B.begin(), B.end());
+|        auto Q = multiply(A, inverse(B, k));
+|        Q.resize(k, 0);
+|        reverse(Q.begin(), Q.end());
+|        return Q;
+|    }
+|    
+|    vector<int> remainder(vector<int> A, vector<int> B) {
+|        int n = A.size(), m = B.size();
+|        if (n < m) {
+|            return A;
+|        }
+|        auto Q = divide(A, B);
+|        Q.resize(min(m, n-m+1));
+|        auto QB = multiply(Q, B);
+|        for (int q = 0; q < m; q++) {
+|            A[q] -= QB[q];
+|            A[q] += C*(A[q] < 0);
+|        }
+|        int ind = m-1;
+|        while (ind > 0 && A[ind] == 0) {
+|            ind--;
+|        }
+|        return {A.begin(), A.begin()+ind+1};
+|    }
+|    
+|    vector<int> pow1(vector<int> A, int y, vector<int>& MOD) {
+|        if (y == 0) {
+|            return {1};
+|        }
+|        if (y % 2 == 0) {
+|            auto res = remainder(multiply(A, A), MOD);
+|            return pow1(res, y/2, MOD);
+|        }
+|        auto res = multiply(pow1(A, y-1, MOD), A);
+|        return remainder(res, MOD);
+|    }
+|    
+|    int get_rec_coef(vector<int>& rec, vector<int>& a, int N) {
+|        vector<int> Q = rec*(-1);
+|        Q.push_back(1);
+|        auto coefs = pow1({0, 1}, N, Q);
+|        int ans = 0;
+|        for (int q = 0; q < coefs.size(); q++) {
+|            ans += coefs[q]*a[q] % C;
+|        }
+|        return ans % C;
+|    }
+\end{verbatim}
+
+\section*{FFT\_modulo}
+\begin{verbatim}
+|    const int g = 31;
+|    vector<int> rev_bits;
+|    
+|    int reverse_bits(int x, int log1) {
+|        int y = 0;
+|        for (int q = 0; q < log1; q++) {
+|            y |= (((x >> q) & 1) << (log1-q-1));
+|        }
+|        return y;
+|    }
+|    
+|    void build_rev_bits(int log1) {
+|        int n = (1 << log1);
+|        rev_bits.assign(n, -1);
+|        for (int q = 0; q < n; q++) {
+|            int q1 = reverse_bits(q, log1);
+|            rev_bits[q] = min(q, q1);
+|        }
+|    }
+|    
+|    void FFT(int* a, int log1) {
+|        int n = (1 << log1);
+|        for (int q = 0; q < n; q++) {
+|            swap(a[q], a[rev_bits[q]]);
+|        }
+|        for (int q = 1; q < n; q <<= 1) {
+|            int root = pow1(g, (C-1)/(q << 1));
+|            for (int q1 = 0; q1 < n; q1 += (q << 1)) {
+|                int now = 1;
+|                for (int q2 = q1; q2 < q1+q; q2++) {
+|                    int x = a[q2], y = a[q2+q]*now % C;
+|                    a[q2] = x+y-(x+y >= C)*C;
+|                    a[q2+q] = x-y+(x-y < 0)*C;
+|                    now = now*root % C;
+|                }
+|            }
+|        }
+|    }
+|    
+|    void IFFT(int* a, int log1) {
+|        int n = (1 << log1);
+|        FFT(a, log1);
+|        reverse(a+1, a+n);
+|        int rev_n = pow1(n, C-2);
+|        for (int q = 0; q < n; q++) {
+|            a[q] *= rev_n, a[q] %= C;
+|        }
+|    }
+|    
+|    int get_degree(int n) {
+|        int log1 = 0;
+|        while ((1 << log1) < n) {
+|            log1++;
+|        }
+|        return log1;
+|    }
+|    
+|    vector<int> multiply(vector<int>& aa, vector<int>& bb) {
+|        int len = (int)aa.size()+(int)bb.size()-1;
+|        int log1 = get_degree(len), n = (1 << log1);
+|        build_rev_bits(log1);
+|        int a[n], b[n];
+|        fill(a, a+n, 0), fill(b, b+n, 0);
+|        copy(aa.begin(), aa.end(), a);
+|        copy(bb.begin(), bb.end(), b);
+|        FFT(a, log1), FFT(b, log1);
+|        for (int q = 0; q < n; q++) {
+|            a[q] = a[q]*b[q] % C;
+|        }
+|        IFFT(a, log1);
+|        vector<int> ans(a, a+len);
+|        return ans;
+|    }
+\end{verbatim}
+
+\section*{FPS}
+\begin{verbatim}
+|    vector<int> Newton_method(vector<int> f0, auto& P, auto& dP, int n) {
+|        while (f0.size() <= n) {
+|            int k = f0.size();
+|            auto num = P(f0), den = dP(f0);
+|            den = inverse(den, 2*k);
+|            auto f1 = multiply(num*(-1), den);
+|            for (int q = 0; q < k; q++) {
+|                f1[q] += f0[q];
+|                f1[q] -= C*(f1[q] >= C);
+|            }
+|            f0 = {f1.begin(), f1.begin()+2*k};
+|        }
+|        return {f0.begin(), f0.begin()+n+1};
+|    }
+|    
+|    vector<int> square_root(vector<int>& A, int n) {
+|        assert(A[0] == 1);
+|        auto P = [&A](vector<int>& f) {
+|            auto f_2 = multiply(f, f);
+|            int len = max(A.size(), f_2.size());
+|            f_2.resize(len, 0);
+|            for (int q = 0; q < A.size(); q++) {
+|                f_2[q] -= A[q];
+|                f_2[q] += C*(f_2[q] < 0);
+|            }
+|            return f_2;
+|        };
+|        auto dP = [](vector<int>& f) {
+|            return f*2;
+|        };
+|        vector<int> f0 = {1};
+|        return Newton_method(f0, P, dP, n);
+|    }
+\end{verbatim}
+
+\section*{online\_FFT}
+\begin{verbatim}
+|    vector<int> online_FFT(int a0, vector<int> b, int c0, auto& func) {
+|        int n = (int)b.size();
+|        int log1 = get_degree(n), len = (1 << log1);
+|        b.resize(len, 0);
+|        vector<vector<int>> blocks(log1);
+|        for (int q = 0; q < log1; q++) {
+|            for (int q1 = (1 << q); q1 < (1 << (q+1)); q1++) {
+|                blocks[q].push_back(b[q1]);
+|            }
+|        }
+|        vector<int> a(2*len, 0), c(2*len, 0);
+|        a[0] = a0, c[0] = c0;
+|        for (int q = 1; q < n; q++) {
+|            int deg = 1, ind = 0;
+|            while (q % deg == 0) {
+|                vector<int> a_i(a.begin()+q-deg, a.begin()+q);
+|                vector<int> now = multiply(a_i, blocks[ind]);
+|                for (int q1 = 0; q1 < now.size(); q1++) {
+|                    c[q+q1] += now[q1], c[q+q1] %= C;
+|                }
+|                deg *= 2, ind++;
+|            }
+|            func(q, a, c);
+|        }
+|        return {c.begin(), c.begin()+n};
+|    }
+\end{verbatim}
+
+\section*{Floor\_sum}
+\begin{verbatim}
+|    int floor_sum(int a, int b, int k) { // [a/b]+...+[k*a/b]
+|        if (a >= b) {
+|            int t = a/b, r = a % b;
+|            return k*(k+1)/2*t+floor_sum(r, b, k);
+|        }
+|        if (a == 0) {
+|            return 0;
+|        }
+|        int m = k*a/b, total = k*m;
+|        int complement = floor_sum(b, a, m);
+|        int on_diag = k*gcd(a, b)/b;
+|        return total+on_diag-complement;
+|    }
+|    
+|    int floor_sum(int a, int b, int l, int r) {
+|        return floor_sum(a, b, max(0LL, r-1))-floor_sum(a, b, max(0LL, l-1));
+|    }
+|    
+|    int sum_mod(int a, int b, int l, int r) {
+|        int amount = r*(r-1)/2-l*(l-1)/2;
+|        return a*amount-b*floor_sum(a, b, l, r);
+|    }
+\end{verbatim}
+
+\section*{ax\_by\_c}
+\begin{verbatim}
+|    p build_gcd_coefs(int a, int b) {
+|        if (b == 0) {
+|            return {1, 0};
+|        }
+|        int m = a/b;
+|        auto [y, x] = build_gcd_coefs(b, a-m*b);
+|        return {x, y-m*x};
+|    }
+|    
+|    p gcd_coef(int a, int b) {
+|        int mx = max(a, b), mn = min(a, b);
+|        auto [x, y] = build_gcd_coefs(mx, mn);
+|        if (a < b) {
+|            swap(x, y);
+|        }
+|        return {x, y};
+|    }
+|    
+|    p ax_by_c(int a, int b, int c) {
+|        auto [x, y] = gcd_coef(a, b);
+|        int g = a*x+b*y;
+|        if (c % g != 0) {
+|            return {-1, -1};
+|        }
+|        a /= g, b /= g, c /= g;
+|        x *= c, y *= c;
+|        int t = x/b;
+|        x -= b*t, y += a*t;
+|        if (x < 0) {
+|            x += b, y -= a;
+|        }
+|        return {x, y};
+|    }
+\end{verbatim}
+
+\section*{C\_k\_n\_any\_modulo}
+\begin{verbatim}
+|    int pow1(int x, int y, int C) {
+|        if (y == 0) {
+|            return 1;
+|        }
+|        if (y % 2 == 0) {
+|            return pow1(x*x % C, y/2, C);
+|        }
+|        return pow1(x, y-1, C)*x % C;
+|    }
+|    
+|    int phi(int n, const vector<int> primes) {
+|        int ans = n;
+|        for (int q : primes) {
+|            ans -= ans/q;
+|        }
+|        return ans;
+|    }
+|    
+|    vector<int> fact, rev_fact;
+|    
+|    void make_fact(int n, int C, vector<int> primes) {
+|        fact = {1};
+|        vector<int> numbers = {0};
+|        for (int q = 1; q <= n; q++) {
+|            int now = q;
+|            for (int q1 : primes) {
+|                while (now % q1 == 0) {
+|                    now /= q1;
+|                }
+|            }
+|            fact.push_back(fact.back()*now % C);
+|            numbers.push_back(now);
+|        }
+|        rev_fact = {pow1(fact.back(), phi(C, primes)-1, C)};
+|        for (int q = min(n, C-1); q > 0; q--) {
+|            rev_fact.push_back(rev_fact.back()*numbers[q] % C);
+|        }
+|        reverse(rev_fact.begin(), rev_fact.end());
+|    }
+|    
+|    int p_degree(int n, int C) {
+|        int ans = 0, deg = C;
+|        while (deg <= n) {
+|            ans += n/deg, deg *= C;
+|        }
+|        return ans;
+|    }
+|    
+|    int C_k_n(int k, int n, int C, vector<int> primes) {
+|        int ans = fact[n]*rev_fact[k] % C*rev_fact[n-k] % C;
+|        for (int q : primes) {
+|            int deg = p_degree(n, q)-p_degree(k, q)-p_degree(n-k, q);
+|            ans = ans*pow1(q, deg, C) % C;
+|        }
+|        return ans;
+|    }
+|    
+|    vector<int> factor(int n) {
+|        vector<int> primes;
+|        int sqrt1 = sqrt(n);
+|        for (int q = 2; q <= sqrt1; q++) {
+|            if (n % q == 0) {
+|                primes.push_back(q);
+|            }
+|            while (n % q == 0) {
+|                n /= q;
+|            }
+|        }
+|        if (n > 1) {
+|            primes.push_back(n);
+|        }
+|        return primes;
+|    }
+\end{verbatim}
+
+\section*{C\_k\_n\_modulo\_p}
+\begin{verbatim}
+|    int pow1(int x, int y, int C) {
+|        if (y == 0) {
+|            return 1;
+|        }
+|        if (y % 2 == 0) {
+|            return pow1(x*x % C, y/2, C);
+|        }
+|        return pow1(x, y-1, C)*x % C;
+|    }
+|    
+|    vector<int> fact, rev_fact;
+|    
+|    void make_fact(int C) {
+|        fact = {1};
+|        for (int q = 1; q < C; q++) {
+|            fact.push_back(fact.back()*q % C);
+|        }
+|        rev_fact = {pow1(fact.back(), C-2, C)};
+|        for (int q = C-1; q > 0; q--) {
+|            rev_fact.push_back(rev_fact.back()*q % C);
+|        }
+|        reverse(rev_fact.begin(), rev_fact.end());
+|    }
+|    
+|    int get_fact(int n, int C) {
+|        if (n < C) {
+|            return fact[n];
+|        }
+|        int ans = fact[n % C]*pow1(fact.back(), n/C, C) % C;
+|        return ans*get_fact(n/C, C) % C;
+|    }
+|    
+|    int get_rev_fact(int n, int C) {
+|        if (n < C) {
+|            return rev_fact[n];
+|        }
+|        int ans = rev_fact[n % C]*pow1(rev_fact.back(), n/C, C) % C;
+|        return ans*get_rev_fact(n/C, C) % C;
+|    }
+|    
+|    int p_degree(int n, int C) {
+|        int ans = 0, deg = C;
+|        while (deg <= n) {
+|            ans += n/deg, deg *= C;
+|        }
+|        return ans;
+|    }
+|    
+|    int C_k_n(int k, int n, int C) {
+|        if (k < 0 || k > n) {
+|            return 0;
+|        }
+|        if (p_degree(n, C) > p_degree(k, C)+p_degree(n-k, C)) {
+|            return 0;
+|        }
+|        return get_fact(n, C)*get_rev_fact(k, C) % C*get_rev_fact(n-k, C) % C;
+|    }
+\end{verbatim}
+
+\section*{N\_th\_root}
+\begin{verbatim}
+|    int pow1(int x, int y, int C) {
+|        if (y == 0) {
+|            return 1;
+|        }
+|        if (y % 2 == 0) {
+|            return pow1(x*x % C, y/2, C);
+|        }
+|        return pow1(x, y-1, C)*x % C;
+|    }
+|    
+|    vector<int> factor(int n) {
+|        vector<int> primes;
+|        int sqrt1 = sqrt(n);
+|        for (int q = 2; q <= sqrt1; q++) {
+|            if (n % q == 0) {
+|                primes.push_back(q);
+|            }
+|            while (n % q == 0) {
+|                n /= q;
+|            }
+|        }
+|        if (n > 1) {
+|            primes.push_back(n);
+|        }
+|        return primes;
+|    }
+|    
+|    int find_g(int C) {
+|        vector<int> primes = factor(C-1);
+|        for (int q = 1;; q++) {
+|            bool flag = true;
+|            for (int q1 : primes) {
+|                if (pow1(q, (C-1)/q1, C) == 1) {
+|                    flag = false;
+|                    break;
+|                }
+|            }
+|            if (flag) {
+|                return q;
+|            }
+|        }
+|    }
+|    
+|    int g_degree(int x, int g, int C) {
+|        int sqrt1 = sqrt(C);
+|        unordered_map<int, int> a;
+|        a.reserve(sqrt1);
+|        int now = 1;
+|        for (int q = 0; q < sqrt1; q++) {
+|            a[now] = q;
+|            now = now*g % C;
+|        }
+|        int rev_sqrt = pow1(now, C-2, C);
+|        for (int q = 0; q <= C/sqrt1; q++) {
+|            if (a.find(x) != a.end()) {
+|                return q*sqrt1+a[x];
+|            }
+|            x = x*rev_sqrt % C;
+|        }
+|        return -1;
+|    }
+|    
+|    int phi(int n) {
+|        vector<int> fact = factor(n);
+|        int ans = n;
+|        for (int q : fact) {
+|            ans -= ans/q;
+|        }
+|        return ans;
+|    }
+|    
+|    p ax_by_c(int a, int b, int c) {
+|        int t = __gcd(a, b);
+|        if (c % t != 0) {
+|            return {-1, -1};
+|        }
+|        a /= t, b /= t, c /= t;
+|        int x = (c*pow1(a, phi(b)-1, b) % b+b) % b;
+|        int y = (c-a*x)/b;
+|        return {x, y};
+|    }
+|    
+|    int sqrt_b(int a, int b, int C) {
+|        if (a == 0) {
+|            return 0;
+|        }
+|        int g = find_g(C);
+|        int deg_a = g_degree(a, g, C);
+|        int x = ax_by_c(b, C-1, deg_a).first;
+|        return (x == -1 ? -1 : pow1(g, x, C));
+|    }
+\end{verbatim}
+
+\section*{Square\_root}
+\begin{verbatim}
+|    int pow1(int x, int y, int C) {
+|        if (y == 0) {
+|            return 1;
+|        }
+|        if (y % 2 == 0) {
+|            return pow1(x*x % C, y/2, C);
+|        }
+|        return pow1(x, y-1, C)*x % C;
+|    }
+|    
+|    mt19937 randint(17957179);
+|    
+|    struct Poly {
+|        int a, b;
+|    };
+|    
+|    Poly mul(Poly x, Poly y, int A, int C) {
+|        int a = x.a*y.b+x.b*y.a;
+|        int b = x.b*y.b+x.a*y.a % C*A;
+|        return {a % C, b % C};
+|    }
+|    
+|    int find_sqrt(int a, int C) {
+|        while (true) {
+|            int t = randint() % (C-1)+1;
+|            Poly x_t(1, t);
+|            int deg = (C-1)/2;
+|            Poly poly(0, 1);
+|            while (deg > 0) {
+|                if (deg & 1) {
+|                    poly = mul(poly, x_t, a, C);
+|                }
+|                x_t = mul(x_t, x_t, a, C);
+|                deg >>= 1;
+|            }
+|            auto [A, B] = poly;
+|            B = (B+C-1) % C;
+|            int val = A*A % C*a % C-B*B % C;
+|            if (A == 0 || val != 0) {
+|                continue;
+|            }
+|            int rev_a = pow1(A, C-2, C);
+|            return B*rev_a % C;
+|        }
+|    }
+|    
+|    int square_root(int a, int C) {
+|        if (a == 0 || C == 2) {
+|            return a;
+|        }
+|        int sign = pow1(a, (C-1)/2, C);
+|        if (sign != 1) {
+|            return -1;
+|        }
+|        if (C % 4 == 3) {
+|            return pow1(a, (C+1)/4, C);
+|        }
+|        return find_sqrt(a, C);
+|    }
+\end{verbatim}
+
+\section*{basic}
+\begin{verbatim}
+|    const ld E = 1e-8;
+|    
+|    template <typename T>
+|    struct NumT {
+|        T val;
+|    
+|        NumT(T val): val(val) {}
+|    
+|        operator T() {
+|            return val;
+|        }
+|    
+|        bool operator==(const NumT& other) const {
+|            return abs(val-other.val) < E;
+|        }
+|    };
+|    
+|    using Num = NumT<ld>;
+|    
+|    auto operator<=>(const Num& x, const Num& y) {
+|        if (x == y) {
+|            return x.val <=> x.val;
+|        }
+|        return x.val <=> y.val;
+|    }
+|    
+|    istream& operator>>(istream& in, Num& x) {
+|        int val;
+|        cin >> val;
+|        x.val = val;
+|        return in;
+|    }
+|    
+|    int sign(Num x) {
+|        return (x > Num(0))-(x < Num(0));
+|    }
+|    
+|    struct Pt {
+|        Num x = 0, y = 0;
+|    
+|        bool operator==(const Pt& other) const {
+|            return x == other.x && y == other.y;
+|        }
+|    
+|        Pt operator+(Pt other) {
+|            return {x+other.x, y+other.y};
+|        }
+|    
+|        Pt operator-(Pt other) {
+|            return {x-other.x, y-other.y};
+|        }
+|    
+|        Pt operator*(Num t) {
+|            return {x*t, y*t};
+|        }
+|    };
+|    
+|    Num dot(Pt x, Pt y) {
+|        return x.x*y.x+x.y*y.y;
+|    }
+|    
+|    Num cross(Pt x, Pt y) {
+|        return x.x*y.y-x.y*y.x;
+|    }
+|    
+|    Num dist_2(Pt x, Pt y) {
+|        return dot(y-x, y-x);
+|    }
+|    
+|    ld angle(Pt x) {
+|        ld alpha = atan2l(x.y, x.x);
+|        ld pi = numbers::pi_v<ld>;
+|        return alpha+2*pi*(alpha < -E);
+|    }
+|    
+|    struct Line {
+|        Pt a, dir;
+|    
+|        int side(Pt x) {
+|            return sign(cross(dir, x-a));
+|        }
+|    
+|        Pt proj(Pt x) {
+|            ld t = dot(x-a, dir)/dot(dir, dir);
+|            return a+dir*t;
+|        }
+|    };
+|    
+|    Line make_line(Pt x, Pt y) {
+|    //    ld t = 1/sqrtl(dist_2(x, y));
+|        int t = 1;
+|        return {x, (y-x)*t};
+|    }
+|    
+|    Pt inter(Line line1, Line line2) {
+|        Num det = cross(line1.dir, line2.dir);
+|        if (det == Num(0)) {
+|            return {NAN, NAN};
+|        }
+|        Pt r = line2.a-line1.a;
+|        Num det_x = cross(r, line2.dir);
+|        ld t = det_x/det;
+|        return line1.a+line1.dir*t;
+|    }
+|    
+|    bool on_seg(Pt a, Pt b, Pt x) {
+|        return cross(x-a, x-b) == Num(0) && dot(x-a, x-b) <= Num(0);
+|    }
+|    
+|    struct Cir {
+|        Pt c;
+|        Num r = 0;
+|    
+|        int in(Pt x) {
+|            return sign(r*r-dist_2(c, x));
+|        }
+|    };
+|    
+|    vector<Pt> inter(Cir cir, Line line) {
+|        Pt proj = line.proj(cir.c);
+|        Num d_2 = dist_2(proj, cir.c);
+|        Num r_2 = cir.r*cir.r;
+|        if (d_2 > r_2) {
+|            return {};
+|        }
+|        if (d_2 == r_2) {
+|            return {proj};
+|        }
+|        Pt dir = line.dir;
+|        ld t = sqrtl((r_2-d_2)/dot(dir, dir));
+|        return {proj-dir*t, proj+dir*t};
+|    }
+|    
+|    Line rad_axis(Cir cir1, Cir cir2) {
+|        Num d_2 = dist_2(cir1.c, cir2.c);
+|        Num r_2 = cir1.r*cir1.r-cir2.r*cir2.r;
+|        ld t = (d_2+r_2)/(2*d_2);
+|        Pt dir = cir2.c-cir1.c;
+|        return {cir1.c+dir*t, {-dir.y, dir.x}};
+|    }
+|    
+|    vector<Pt> inter(Cir cir1, Cir cir2) {
+|        if (cir1.c == cir2.c) {
+|            return {};
+|        }
+|        return inter(cir1, rad_axis(cir1, cir2));
+|    }
+|    
+|    vector<Pt> tangents(Cir cir, Pt x) {
+|        Num r_2 = dist_2(cir.c, x)-cir.r*cir.r;
+|        ld r = sqrtl(max<ld>(0, r_2));
+|        return inter({x, r}, cir);
+|    }
+\end{verbatim}
+
+\section*{polygons}
+\begin{verbatim}
+|    struct Polygon {
+|        vector<Pt> a;
+|        int n;
+|    
+|        Polygon(const vector<Pt>& a_): a(a_) {
+|            auto w = unique(a.begin(), a.end());
+|            n = w-a.begin();
+|            if (n == 0) {
+|                return;
+|            }
+|            n -= (n > 1 && a[0] == a[n-1]);
+|            a.resize(n);
+|            a.push_back(a[0]);
+|        }
+|    };
+|    
+|    int belong_convex(Polygon& a, Pt x) {
+|        if (a.n <= 1) {
+|            return (a.n == 1 && a.a[0] == x)-1;
+|        }
+|        Pt pt = a.a[0];
+|        if (cross(a.a[1]-pt, x-pt) <= Num(0)) {
+|            return on_seg(a.a[0], a.a[1], x)-1;
+|        }
+|        if (cross(a.a[a.n-1]-pt, x-pt) >= Num(0)) {
+|            return on_seg(a.a[0], a.a[a.n-1], x)-1;
+|        }
+|        int l = 0, r = a.n;
+|        while (r-l > 1) {
+|            int m = (l+r)/2;
+|            if (cross(a.a[m]-pt, x-pt) > Num(0)) {
+|                l = m;
+|            } else {
+|                r = m;
+|            }
+|        }
+|        return make_line(a.a[l], a.a[r]).side(x);
+|    }
+|    
+|    bool need_pop_back(vector<Pt>& a, Pt x) {
+|        int m = (int)a.size();
+|        return m >= 2 && cross(a[m-1]-a[m-2], x-a[m-2]) <= Num(0);
+|    }
+|    
+|    vector<Pt> build_envelope(vector<Pt>& a) {
+|        int n = (int)a.size();
+|        vector<Pt> ans = {a[0]};
+|        for (int q = 1; q < n; q++) {
+|            while (need_pop_back(ans, a[q])) {
+|                ans.pop_back();
+|            }
+|            ans.push_back(a[q]);
+|        }
+|        return ans;
+|    }
+|    
+|    Polygon convex_hull(vector<Pt> a) {
+|        if (a.empty()) {
+|            return {{}};
+|        }
+|        ranges::sort(a, {}, [](Pt x) {return pair{x.x, x.y};});
+|        vector<Pt> up = {a[0]}, down = {a[0]};
+|        for (Pt pt : a) {
+|            Num c = cross(a.back()-a[0], pt-a[0]);
+|            if (c > Num(0)) {
+|                up.push_back(pt);
+|            } else if (c < Num(0)) {
+|                down.push_back(pt);
+|            }
+|        }
+|        up.push_back(a.back());
+|        down.push_back(a.back());
+|        reverse(up.begin(), up.end());
+|        up = build_envelope(up);
+|        down = build_envelope(down);
+|        down.insert(down.end(), up.begin()+1, up.end()-1);
+|        return {down};
+|    }
+|    
+|    bool add_line(deque<Line>& hull, Line line) {
+|        int len = (int)hull.size();
+|        while (len > 1 && line.side(inter(hull[len-1], hull[len-2])) == -1) {
+|            hull.pop_back();
+|            len--;
+|        }
+|        while (len > 1 && line.side(inter(hull[0], hull[1])) == -1) {
+|            hull.pop_front();
+|            len--;
+|        }
+|        if (len > 0 && cross(line.dir, hull.back().dir) == Num(0)) {
+|            if (dot(line.dir, hull.back().dir) < Num(0)) {
+|                return false;
+|            }
+|            if (cross(hull.back().dir, line.a-hull.back().a) > Num(0)) {
+|                hull.pop_back();
+|            } else {
+|                return true;
+|            }
+|        }
+|        if (len == 1 && cross(hull[0].dir, line.dir) < Num(0)) {
+|            return false;
+|        }
+|        hull.push_back(line);
+|        return true;
+|    }
+|    
+|    vector<Line> inter_lines(vector<Line>& a) {
+|        deque<Line> hull;
+|        for (Line line : a) {
+|            if (!add_line(hull, line)) {
+|                return {};
+|            }
+|        }
+|        if (hull.empty() || !add_line(hull, hull[0])) {
+|            return {};
+|        }
+|        return {hull.begin(), hull.end()-1};
+|    }
+|    
+|    Polygon half_planes_inter(vector<Line> A) {
+|        A.emplace_back(Pt(-INF, -INF), Pt(1, 0));
+|        A.emplace_back(Pt(INF, -INF), Pt(0, 1));
+|        A.emplace_back(Pt(INF, INF), Pt(-1, 0));
+|        A.emplace_back(Pt(-INF, INF), Pt(0, -1));
+|    
+|        vector<pair<Line, ld>> aa;
+|        for (Line line : A) {
+|            aa.emplace_back(line, angle(line.dir));
+|        }
+|        ranges::sort(aa, {}, [](auto x) {return x.second;});
+|        vector<Line> a;
+|        for (auto q : aa) {
+|            a.push_back(q.first);
+|        }
+|        vector<Line> hull = inter_lines(a);
+|    
+|        int n = (int)hull.size();
+|        vector<Pt> ans;
+|        for (int q = 0; q < n; q++) {
+|            ans.push_back(inter(hull[q], hull[(q+1) % n]));
+|        }
+|        return {ans};
+|    }
+\end{verbatim}
+
+\section*{Grice\_Misra\_sieve}
+\begin{verbatim}
+|    vector<int> Grice_Misra_sieve(int n) {
+|        vector<int> primes, lcp(n+1, 0);
+|        for (int q = 2; q <= n; q++) {
+|            if (lcp[q] == 0) {
+|                lcp[q] = q;
+|                primes.push_back(q);
+|            }
+|            for (int q1 = 0; q1 < primes.size() && primes[q1] <= lcp[q] && q*primes[q1] <= n; q1++) {
+|                lcp[q*primes[q1]] = primes[q1];
+|            }
+|        }
+|        return lcp;
+|    }
+\end{verbatim}
+
+\section*{Binary\_Gauss}
+\begin{verbatim}
+|    #include <tr2/dynamic_bitset>
+|    using Bitset = tr2::dynamic_bitset<>;
+|    
+|    struct Gauss {
+|        vector<Bitset> a;
+|        int n, m;
+|    
+|        explicit Gauss(auto& a_): n(a_.size()), m(a_[0].size()) {
+|            for (int q = 0; q < n; q++) {
+|                a.emplace_back(m);
+|                for (int q1 = 0; q1 < m; q1++) {
+|                    a[q][q1] = a_[q][q1];
+|                }
+|            }
+|        }
+|    
+|        void subtract(int q, int q1) {
+|            for (int q2 = 0; q2 < n; q2++) {
+|                if (q != q2 && a[q2][q1]) {
+|                    a[q2] ^= a[q];
+|                }
+|            }
+|        }
+|    
+|        void gauss() {
+|            for (int q = 0; q < n; q++) {
+|                int q1 = (int)a[q].find_first();
+|                if (q1 != m) {
+|                    subtract(q, q1);
+|                }
+|            }
+|        }
+|    
+|        auto annihilator() const {
+|            vector<int> leader(n);
+|            for (int q = 0; q < n; q++) {
+|                leader[q] = (int)a[q].find_first();
+|            }
+|            vector<Bitset> ans;
+|            for (int q1 = 0; q1 < m; q1++) {
+|                if (ranges::find(leader, q1) != leader.end()) {
+|                    continue;
+|                }
+|                ans.emplace_back(m+1);
+|                for (int q = 0; q < n; q++) {
+|                    ans.back()[leader[q]] = a[q][q1];
+|                }
+|                ans.back().resize(m);
+|                ans.back()[q1] = true;
+|            }
+|            return ans;
+|        }
+|    };
+\end{verbatim}
+
+\section*{SLAE\_solve}
+\begin{verbatim}
+|    const ld E = 1e-8;
+|    
+|    struct Matrix {
+|        vector<vector<ld>> a;
+|        int n, m;
+|    
+|        Matrix(auto& a_): n(a_.size()), m(a_[0].size()) {
+|            a.assign(n, vector<ld>(m));
+|            for (int q = 0; q < n; q++) {
+|                for (int q1 = 0; q1 < m; q1++) {
+|                    a[q][q1] = a_[q][q1];
+|                }
+|            }
+|        }
+|    
+|        Matrix(Matrix&) = default;
+|    
+|        int find_leader(int q) {
+|            int q1 = 0;
+|            while (q1 < m && abs(a[q][q1]) < E) {
+|                q1++;
+|            }
+|            return q1;
+|        }
+|    
+|        void subtract(int q, int q1) {
+|            ld val = a[q][q1];
+|            for (int q2 = 0; q2 < n; q2++) {
+|                if (q == q2 || abs(a[q2][q1]) < E) {
+|                    continue;
+|                }
+|                ld coef = a[q2][q1]/val;
+|                for (int q3 = 0; q3 < m; q3++) {
+|                    a[q2][q3] -= a[q][q3]*coef;
+|                }
+|            }
+|        }
+|    
+|        void gauss() {
+|            for (int q = 0; q < n; q++) {
+|                int q1 = find_leader(q);
+|                if (q1 != m) {
+|                    subtract(q, q1);
+|                }
+|            }
+|        }
+|    };
+|    
+|    vector<ld> solve_SLAE(Matrix a, vector<ld>& s) {
+|        a.m++;
+|        for (int q = 0; q < a.n; q++) {
+|            a.a[q].push_back(s[q]);
+|        }
+|        a.gauss();
+|        vector<ld> ans(a.m-1, 0);
+|        for (int q = 0; q < a.n; q++) {
+|            int q1 = a.find_leader(q);
+|            if (q1 == a.m-1) {
+|                return {};
+|            }
+|            if (q1 != a.m) {
+|                ld val = a.a[q][q1];
+|                ld need = a.a[q].back();
+|                ans[q1] = need/val;
+|            }
+|        }
+|        return ans;
+|    }
+\end{verbatim}
+
+\section*{Or\_And\_convolution}
+\begin{verbatim}
+|    template <bool Rev = false>
+|    vector<int> SOS(vector<int> a) {
+|        int n = (int)a.size();
+|        for (int q1 = 1; q1 < n; q1 <<= 1) {
+|            for (int q2 = q1; q2 < n; q2 += (q1 << 1)) {
+|                for (int q = q2; q < q2+q1; q++) {
+|                    if constexpr (!Rev) {
+|                        a[q] += a[q ^ q1];
+|                    } else {
+|                        a[q] -= a[q ^ q1];
+|                    }
+|                }
+|            }
+|        }
+|        for (int& q : a) {
+|            q = (q % C+C) % C;
+|        }
+|        return a;
+|    }
+|    
+|    vector<int> num_ones;
+|    
+|    void make_num_ones(int n) {
+|        num_ones.assign(1 << n, 0);
+|        for (int q = 0; q < n; q++) {
+|            num_ones[1 << q] = 1;
+|        }
+|        for (int q = 1; q < (1 << n); q++) {
+|            int last_bit = q-(q & (q-1));
+|            num_ones[q] = num_ones[q ^ last_bit]+num_ones[last_bit];
+|        }
+|    }
+|    
+|    int SOS_value(int q, const vector<int> &a) {
+|        int ans = (1-((num_ones[q] & 1) << 1))*a[0];
+|        for (int q1 = q; q1 > 0; q1 = ((q1-1) & q)) {
+|            ans += (1-((num_ones[q ^ q1] & 1) << 1))*a[q1];
+|        }
+|        return (ans % C+C) % C;
+|    }
+|    
+|    auto or_convolution_SOS(const vector<int> &a, const vector<int> &b) {
+|        int n = (int)a.size();
+|        vector<int> c(n);
+|        for (int q = 0; q < n; q++) {
+|            c[q] = a[q]*b[q] % C;
+|        }
+|        return c;
+|    }
+|    
+|    vector<int> or_convolution(const vector<int>& a, const vector<int>& b) {
+|        return SOS<true>(or_convolution_SOS(SOS(a), SOS(b)));
+|    }
+|    
+|    vector<int> and_convolution(vector<int> a, vector<int> b) {
+|        int n = (int)a.size(), ALL = n-1;
+|        for (int q = 0; q < (n >> 1); q++) {
+|            swap(a[q], a[q ^ ALL]);
+|            swap(b[q], b[q ^ ALL]);
+|        }
+|        vector<int> c = or_convolution(a, b);
+|        for (int q = 0; q < (n >> 1); q++) {
+|            swap(c[q], c[q ^ ALL]);
+|        }
+|        return c;
+|    }
+\end{verbatim}
+
 \section*{Pollard}
 \begin{verbatim}
 |    __int128 pow2(__int128 x, __int128 y, __int128 C) {
@@ -820,1122 +1927,6 @@
 |            primes.push_back(q);
 |        }
 |        return primes;
-|    }
-\end{verbatim}
-
-\section*{FFT\_divide}
-\begin{verbatim}
-|    int pow1(int x, int y, int C) {
-|        if (y == 0) {
-|            return 1;
-|        }
-|        if (y % 2 == 0) {
-|            return pow1(x*x % C, y/2, C);
-|        }
-|        return pow1(x, y-1, C)*x % C;
-|    }
-|    
-|    #define ld double
-|    const ld PI = acosl(-1);
-|    
-|    int reverse_bits(int x, int len) {
-|        int y = 0;
-|        for (int q = 0; q < len; q++) {
-|            y |= (((x >> q) & 1) << (len-q-1));
-|        }
-|        return y;
-|    }
-|    
-|    void FFT(vector<complex<ld>> &a) {
-|        int n = a.size(), len = 1;
-|        while ((1 << len) < n) {
-|            len++;
-|        }
-|        for (int q = 0; q < n; q++) {
-|            int q1 = reverse_bits(q, len);
-|            if (q < q1) {
-|                swap(a[q], a[q1]);
-|            }
-|        }
-|        for (int q = 1; q < n; q <<= 1) {
-|            complex<ld> root(cosl(PI/q), sinl(PI/q));
-|            for (int q1 = 0; q1 < n; q1 += (q << 1)) {
-|                complex<ld> now = 1;
-|                for (int q2 = q1; q2 < q1+q; q2++) {
-|                    complex<ld> x = a[q2], y = a[q2+q]*now;
-|                    a[q2] = x+y, a[q2+q] = x-y;
-|                    now *= root;
-|                }
-|            }
-|        }
-|    }
-|    
-|    void IFFT(vector<complex<ld>> &a) {
-|        int n = a.size();
-|        FFT(a);
-|        reverse(a.begin()+1, a.end());
-|        for (complex<ld> &q : a) {
-|            q /= n;
-|        }
-|    }
-|    
-|    vector<complex<ld>> to_FFT_form(const vector<int> &a, int deg) {
-|        vector<complex<ld>> A;
-|        for (int q : a) {
-|            A.push_back(q);
-|        }
-|        while (A.size() < deg) {
-|            A.push_back(0);
-|        }
-|        return A;
-|    }
-|    
-|    vector<int> from_FFT_form(const vector<complex<ld>> &A) {
-|        vector<int> a;
-|        for (const complex<ld> &q : A) {
-|            a.push_back(roundl(q.real()));
-|        }
-|        while (a.size() > 1 && a.back() == 0) {
-|            a.pop_back();
-|        }
-|        return a;
-|    }
-|    
-|    vector<int> multiply(const vector<int> &a, const vector<int> &b, int MOD) {
-|        int deg = 1;
-|        while (deg < a.size()+b.size()) {
-|            deg <<= 1;
-|        }
-|        vector<complex<ld>> A = to_FFT_form(a, deg);
-|        vector<complex<ld>> B = to_FFT_form(b, deg);
-|        FFT(A), FFT(B);
-|        vector<complex<ld>> C(deg);
-|        for (int q = 0; q < deg; q++) {
-|            C[q] = A[q]*B[q];
-|        }
-|        IFFT(C);
-|        vector<int> c = from_FFT_form(C);
-|        for (int &q : c) {
-|            q %= MOD;
-|        }
-|        return c;
-|    }
-|    
-|    void fix_zeros(vector<int> &a, int n) {
-|        while (a.size() < n) {
-|            a.push_back(0);
-|        }
-|        while (a.size() > n && a.back() == 0) {
-|            a.pop_back();
-|        }
-|    }
-|    
-|    void modulo_x_n(vector<int> &a, int n) {
-|        while (a.size() < n) {
-|            a.push_back(0);
-|        }
-|        while (a.size() > n) {
-|            a.pop_back();
-|        }
-|    }
-|    
-|    int get_degree(int n) {
-|        int deg = 1;
-|        while (deg < n) {
-|            deg <<= 1;
-|        }
-|        return deg;
-|    }
-|    
-|    vector<int> opposite(vector<int> a, int MOD) {
-|        for (int &q : a) {
-|            q = (MOD-q) % MOD;
-|        }
-|        return a;
-|    }
-|    
-|    vector<int> find_reversed(vector<int> &a, int n, int MOD) {
-|        if (n == 1) {
-|            if (a[0] == 0) {
-|                exit(179);
-|            }
-|            return {pow1(a[0], MOD-2, MOD)};
-|        }
-|        vector<int> a0, a1;
-|        for (int q = 0; q < n/2; q++) {
-|            a0.push_back(a[q]);
-|        }
-|        for (int q = n/2; q < n; q++) {
-|            a1.push_back(a[q]);
-|        }
-|        vector<int> rev_a0 = find_reversed(a0, n/2, MOD);
-|        vector<int> Q = multiply(a0, rev_a0, MOD);
-|        fix_zeros(Q, n);
-|        reverse(Q.begin(), Q.end());
-|        modulo_x_n(Q, n/2);
-|        reverse(Q.begin(), Q.end());
-|        vector<int> rev_a0_by_a1 = multiply(rev_a0, a1, MOD);
-|        modulo_x_n(rev_a0_by_a1, n/2);
-|        for (int q = 0; q < n/2; q++) {
-|            Q[q] += rev_a0_by_a1[q];
-|        }
-|        vector<int> E = multiply(rev_a0, Q, MOD);
-|        modulo_x_n(E, n/2);
-|        E = opposite(E, MOD);
-|        for (int q : E) {
-|            rev_a0.push_back(q);
-|        }
-|        return rev_a0;
-|    }
-|    
-|    vector<int> reverse(vector<int> a, int n, int MOD) {
-|        int deg = get_degree(n);
-|        fix_zeros(a, deg);
-|        vector<int> rev = find_reversed(a, deg, MOD);
-|        modulo_x_n(rev, n);
-|        return rev;
-|    }
-|    
-|    vector<int> divide(vector<int> a, vector<int> b, int MOD) {
-|        if (a.size() < b.size() || a.size() == 1 && a[0] == 0) {
-|            return {0};
-|        }
-|        if (b.size() == 1 && b[0] == 0) {
-|            exit(179);
-|        }
-|        reverse(a.begin(), a.end());
-|        reverse(b.begin(), b.end());
-|        vector<int> rev = reverse(b, (int)a.size()-(int)b.size()+1, MOD);
-|        vector<int> c = multiply(a, rev, MOD);
-|        modulo_x_n(c, (int)a.size()-(int)b.size()+1);
-|        reverse(c.begin(), c.end());
-|        return c;
-|    }
-|    
-|    vector<int> add(const vector<int> &a, const vector<int> &b, int MOD) {
-|        int n = a.size(), m = b.size();
-|        vector<int> c(max(n, m));
-|        for (int q = 0; q < max(n, m); q++) {
-|            c[q] = ((q < n ? a[q] : 0)+(q < m ? b[q] : 0)) % MOD;
-|        }
-|        fix_zeros(c, 1);
-|        return c;
-|    }
-|    
-|    vector<int> subtract(const vector<int> &a, const vector<int> &b, int MOD) {
-|        return add(a, opposite(b, MOD), MOD);
-|    }
-|    
-|    vector<int> take_remainder(const vector<int> &a, const vector<int> &b, int MOD) {
-|        vector<int> divider = divide(a, b, MOD);
-|        return subtract(a, multiply(b, divider, MOD), MOD);
-|    }
-|    
-|    vector<int> pow(vector<int> P, vector<int> mod, int n, int MOD) {
-|        if (n == 0) {
-|            return {1};
-|        }
-|        if (n % 2 == 0) {
-|            return pow(take_remainder(multiply(P, P, MOD), mod, MOD), mod, n/2, MOD);
-|        }
-|        return take_remainder(multiply(pow(P, mod, n-1, MOD), P, MOD), mod, MOD);
-|    }
-\end{verbatim}
-
-\section*{FFT\_modulo}
-\begin{verbatim}
-|    const int g = 31;
-|    vector<int> rev_bits;
-|    
-|    int reverse_bits(int x, int log1) {
-|        int y = 0;
-|        for (int q = 0; q < log1; q++) {
-|            y |= (((x >> q) & 1) << (log1-q-1));
-|        }
-|        return y;
-|    }
-|    
-|    void build_rev_bits(int log1) {
-|        int n = (1 << log1);
-|        rev_bits.assign(n, -1);
-|        for (int q = 0; q < n; q++) {
-|            int q1 = reverse_bits(q, log1);
-|            rev_bits[q] = min(q, q1);
-|        }
-|    }
-|    
-|    void FFT(int* a, int log1) {
-|        int n = (1 << log1);
-|        for (int q = 0; q < n; q++) {
-|            swap(a[q], a[rev_bits[q]]);
-|        }
-|        for (int q = 1; q < n; q <<= 1) {
-|            int root = pow1(g, (C-1)/(q << 1));
-|            for (int q1 = 0; q1 < n; q1 += (q << 1)) {
-|                int now = 1;
-|                for (int q2 = q1; q2 < q1+q; q2++) {
-|                    int x = a[q2], y = a[q2+q]*now % C;
-|                    a[q2] = x+y-(x+y >= C)*C;
-|                    a[q2+q] = x-y+(x-y < 0)*C;
-|                    now = now*root % C;
-|                }
-|            }
-|        }
-|    }
-|    
-|    void IFFT(int* a, int log1) {
-|        int n = (1 << log1);
-|        FFT(a, log1);
-|        reverse(a+1, a+n);
-|        int rev_n = pow1(n, C-2);
-|        for (int q = 0; q < n; q++) {
-|            a[q] *= rev_n, a[q] %= C;
-|        }
-|    }
-|    
-|    int get_degree(int n) {
-|        int log1 = 0;
-|        while ((1 << log1) < n) {
-|            log1++;
-|        }
-|        return log1;
-|    }
-|    
-|    vector<int> multiply(vector<int>& aa, vector<int>& bb) {
-|        int len = (int)aa.size()+(int)bb.size()-1;
-|        int log1 = get_degree(len), n = (1 << log1);
-|        build_rev_bits(log1);
-|        int a[n], b[n];
-|        fill(a, a+n, 0), fill(b, b+n, 0);
-|        copy(aa.begin(), aa.end(), a);
-|        copy(bb.begin(), bb.end(), b);
-|        FFT(a, log1), FFT(b, log1);
-|        for (int q = 0; q < n; q++) {
-|            a[q] = a[q]*b[q] % C;
-|        }
-|        IFFT(a, log1);
-|        vector<int> ans(a, a+len);
-|        return ans;
-|    }
-\end{verbatim}
-
-\section*{online\_FFT}
-\begin{verbatim}
-|    const int g = 31;
-|    
-|    int reverse_bits(int x, int log1) {
-|        int y = 0;
-|        for (int q = 0; q < log1; q++) {
-|            y |= (((x >> q) & 1) << (log1-q-1));
-|        }
-|        return y;
-|    }
-|    
-|    void FFT(vector<int>& a, int log1) {
-|        int n = (1 << log1);
-|        for (int q = 0; q < n; q++) {
-|            int rev = reverse_bits(q, log1);
-|            swap(a[q], a[min(q, rev)]);
-|        }
-|        for (int q = 1; q < n; q <<= 1) {
-|            int root = pow1(g, (C-1)/(q << 1));
-|            for (int q1 = 0; q1 < n; q1 += (q << 1)) {
-|                int now = 1;
-|                for (int q2 = q1; q2 < q1+q; q2++) {
-|                    int x = a[q2], y = a[q2+q]*now % C;
-|                    a[q2] = x+y-(x+y >= C)*C;
-|                    a[q2+q] = x-y+(x-y < 0)*C;
-|                    now = now*root % C;
-|                }
-|            }
-|        }
-|    }
-|    
-|    void IFFT(vector<int>& a, int log1) {
-|        int n = (1 << log1);
-|        FFT(a, log1);
-|        reverse(a.begin()+1, a.end());
-|        int rev_n = pow1(n, C-2);
-|        for (int& q : a) {
-|            q *= rev_n, q %= C;
-|        }
-|    }
-|    
-|    int get_degree(int n) {
-|        int num_zeros = __builtin_clz(n-1);
-|        return 32-num_zeros;
-|    }
-|    
-|    vector<int> multiply(vector<int> a, vector<int> b) {
-|        int len = (int)a.size()+(int)b.size()-1;
-|        int log1 = get_degree(len), n = (1 << log1);
-|        a.resize(n, 0), b.resize(n, 0);
-|        FFT(a, log1), FFT(b, log1);
-|        for (int q = 0; q < n; q++) {
-|            a[q] *= b[q], a[q] %= C;
-|        }
-|        IFFT(a, log1), a.resize(len);
-|        return a;
-|    }
-|    
-|    void add_seg(vector<int>& a, vector<int>& b, vector<int>& c, int q, int len, int r) {
-|        vector<int> a1(a.begin()+q-len, a.begin()+q);
-|        vector<int> b1(b.begin(), b.begin()+min(r, 2*len));
-|        vector<int> c1 = multiply(a1, b1);
-|        for (int q1 = 0; q1 < min(r, len); q1++) {
-|            c[q+q1] += c1[q1+len-1];
-|        }
-|    }
-|    
-|    vector<int> online_FFT(vector<int>& b, int c0, int n) {
-|        vector<int> c(2*n+1, 0); // if a == c
-|        c[0] = c0;
-|        for (int q = 1; q <= n; q++) {
-|            int deg = __builtin_ctz(q), len = (1 << deg);
-|            add_seg(c, b, c, q, len, q);
-|            add_seg(b, c, c, q, len, q-len);
-|            int rev_q = pow1(q, C-2); // for Bell's numbers
-|            c[q] = c[q] % C*rev_q % C;
-|        }
-|        c.resize(n+1);
-|        return c;
-|    }
-\end{verbatim}
-
-\section*{C\_k\_n\_any\_modulo}
-\begin{verbatim}
-|    int phi(int n, const vector<int> primes) {
-|        int ans = n;
-|        for (int q : primes) {
-|            ans -= ans/q;
-|        }
-|        return ans;
-|    }
-|    
-|    vector<int> fact, rev_fact;
-|    
-|    void make_fact(int n, int C, vector<int> primes) {
-|        fact = {1};
-|        vector<int> numbers = {0};
-|        for (int q = 1; q <= n; q++) {
-|            int now = q;
-|            for (int q1 : primes) {
-|                while (now % q1 == 0) {
-|                    now /= q1;
-|                }
-|            }
-|            fact.push_back(fact.back()*now % C);
-|            numbers.push_back(now);
-|        }
-|        rev_fact = {pow1(fact.back(), phi(C, primes)-1, C)};
-|        for (int q = min(n, C-1); q > 0; q--) {
-|            rev_fact.push_back(rev_fact.back()*numbers[q] % C);
-|        }
-|        reverse(rev_fact.begin(), rev_fact.end());
-|    }
-|    
-|    int p_degree(int n, int C) {
-|        int ans = 0, deg = C;
-|        while (deg <= n) {
-|            ans += n/deg, deg *= C;
-|        }
-|        return ans;
-|    }
-|    
-|    int C_k_n(int k, int n, int C, vector<int> primes) {
-|        int ans = fact[n]*rev_fact[k] % C*rev_fact[n-k] % C;
-|        for (int q : primes) {
-|            int deg = p_degree(n, q)-p_degree(k, q)-p_degree(n-k, q);
-|            ans = ans*pow1(q, deg, C) % C;
-|        }
-|        return ans;
-|    }
-\end{verbatim}
-
-\section*{N\_th\_root}
-\begin{verbatim}
-|    int find_g(int C) {
-|        vector<int> primes = factor(C-1);
-|        for (int q = 1;; q++) {
-|            bool flag = true;
-|            for (int q1 : primes) {
-|                if (pow1(q, (C-1)/q1, C) == 1) {
-|                    flag = false;
-|                    break;
-|                }
-|            }
-|            if (flag) {
-|                return q;
-|            }
-|        }
-|    }
-|    
-|    int g_degree(int x, int g, int C) {
-|        int sqrt1 = sqrt(C);
-|        unordered_map<int, int> a;
-|        a.reserve(sqrt1);
-|        int now = 1;
-|        for (int q = 0; q < sqrt1; q++) {
-|            a[now] = q;
-|            now = now*g % C;
-|        }
-|        int rev_sqrt = pow1(now, C-2, C);
-|        for (int q = 0; q <= C/sqrt1; q++) {
-|            if (a.find(x) != a.end()) {
-|                return q*sqrt1+a[x];
-|            }
-|            x = x*rev_sqrt % C;
-|        }
-|        return -1;
-|    }
-|    
-|    int phi(int n) {
-|        vector<int> fact = factor(n);
-|        int ans = n;
-|        for (int q : fact) {
-|            ans -= ans/q;
-|        }
-|        return ans;
-|    }
-|    
-|    p ax_by_c(int a, int b, int c) {
-|        int t = __gcd(a, b);
-|        if (c % t != 0) {
-|            return {-1, -1};
-|        }
-|        a /= t, b /= t, c /= t;
-|        int x = (c*pow1(a, phi(b)-1, b) % b+b) % b;
-|        int y = (c-a*x)/b;
-|        return {x, y};
-|    }
-|    
-|    int sqrt_b(int a, int b, int C) {
-|        if (a == 0) {
-|            return 0;
-|        }
-|        int g = find_g(C);
-|        int deg_a = g_degree(a, g, C);
-|        int x = ax_by_c(b, C-1, deg_a).first;
-|        return (x == -1 ? -1 : pow1(g, x, C));
-|    }
-\end{verbatim}
-
-\section*{double}
-\begin{verbatim}
-|    #define ld long double
-|    const ld E = 1e-8;
-|    
-|    ld angle(Pt x, Pt y) {
-|        // angle between (1, 0) и (sin, cos)
-|        return atan2(cross(x, y), dot(x, y));
-|    }
-|    
-|    struct Line {
-|        ld a, b, c;
-|    
-|        Line(ld a, ld b, ld c): a(a), b(b), c(c) {}
-|        Line(Pt x, Pt y): a(x.y-y.y), b(y.x-x.x), c(cross(x, y)) {}
-|    
-|        Pt dir() const {
-|            return {b, -a};
-|        }
-|    
-|        Pt norm() const {
-|            return {a, b};
-|        }
-|    
-|        Line per(Pt x) const {
-|            return {x, x+norm()};
-|        }
-|    
-|        bool on(Pt x) const {
-|            return abs(a*x.x+b*x.y+c) < E;
-|        }
-|    };
-|    
-|    bool on_line(Pt x, Pt y, Pt z) {
-|        return abs(cross(y-x, z-x)) < E;
-|    }
-|    
-|    bool is_parallel(Line a, Line b) {
-|        return abs(cross(a.dir(), b.dir())) < E;
-|    }
-|    
-|    vector<Pt> inter(Line a, Line b) {
-|        if (is_parallel(a, b)) {
-|            return {};
-|        }
-|        ld det = cross(a.norm(), b.norm());
-|        ld det_x = cross(Pt(-a.c, a.b), Pt(-b.c, b.b));
-|        ld det_y = cross(Pt(a.a, -a.c), Pt(b.a, -b.c));
-|        return {Pt(det_x/det, det_y/det)};
-|    }
-|    
-|    Pt projection(Line line, Pt x) {
-|        return inter(line, line.per(x))[0];
-|    }
-|    
-|    struct Seg {
-|        Pt x, y;
-|    
-|        Seg() = default;
-|        Seg(Pt x, Pt y): x(x), y(y) {}
-|    
-|        explicit operator bool() const {
-|            return x != y;
-|        }
-|    
-|        Line line() const {
-|            return {x, y};
-|        }
-|    
-|        bool on(Pt point) const {
-|            return on_line(x, y, point) && dot(point-x, point-y) < E;
-|        }
-|    };
-|    
-|    vector<Pt> inter(Seg a, Seg b) {
-|        vector<Pt> inters;
-|        if (!a && b.on(a.x)) {
-|            inters.push_back(a.x);
-|        } else if (!b && a.on(b.x)) {
-|            inters.push_back(b.x);
-|        }
-|        if (!a || !b) {
-|            return inters;
-|        }
-|        inters = inter(a.line(), b.line());
-|        if (!inters.empty() && a.on(inters[0]) && b.on(inters[0])) {
-|            return inters;
-|        }
-|        return {};
-|    }
-|    
-|    struct Cir {
-|        Pt x;
-|        ld r = 0;
-|    
-|        Cir() = default;
-|        Cir(Pt x, ld r): x(x), r(r) {}
-|    
-|        bool on(Pt point) const {
-|            return abs(dist(point, x)-r) < E;
-|        }
-|    };
-|    
-|    vector<Pt> inter(Cir cir, Line line) {
-|        Pt proj = projection(line, cir.x);
-|        ld h = dist(proj, cir.x);
-|        if (h > cir.r-E) {
-|            return h > cir.r+E ? vector<Pt>() : vector{proj};
-|        }
-|        ld len = sqrtl(cir.r*cir.r-h*h);
-|        Pt dir = line.dir().norm(len);
-|        vector<Pt> ans = {proj-dir, proj+dir};
-|        sort(ans.begin(), ans.end());
-|        return ans;
-|    }
-|    
-|    vector<Pt> inter(Cir cir, Seg seg) {
-|        if (!seg) {
-|            return cir.on(seg.x) ? vector{seg.x} : vector<Pt>();
-|        }
-|        vector<Pt> ans, inters = inter(cir, seg.line());
-|        for (Pt q : inters) {
-|            if (seg.on(q)) {
-|                ans.push_back(q);
-|            }
-|        }
-|        return ans;
-|    }
-|    
-|    Line rad_axis(Cir cir1, Cir cir2) {
-|        ld a1 = cir1.x.x, b1 = cir1.x.y, r1 = cir1.r;
-|        ld a2 = cir2.x.x, b2 = cir2.x.y, r2 = cir2.r;
-|        return {2*(a2-a1), 2*(b2-b1), a1*a1-a2*a2+b1*b1-b2*b2+r2*r2-r1*r1};
-|    }
-|    
-|    vector<Pt> inter(Cir cir1, Cir cir2) {
-|        if (cir1.x == cir2.x) {
-|            return {};
-|        }
-|        return inter(cir1, rad_axis(cir1, cir2));
-|    }
-\end{verbatim}
-
-\section*{polygons}
-\begin{verbatim}
-|    #define ld long double
-|    
-|    ld angle(Pt x, Pt y) {
-|        // angle between (1, 0) и (sin, cos)
-|        return atan2(cross(x, y), dot(x, y));
-|    }
-|    
-|    bool on_line(Pt x, Pt y, Pt z) {
-|        return cross(y-x, z-x) == 0;
-|    }
-|    
-|    struct Seg {
-|        Pt x, y;
-|    
-|        Seg(Pt x, Pt y): x(x), y(y) {}
-|    
-|        auto operator<=>(const Seg& other) const = default;
-|    
-|        explicit operator bool() const {
-|            return x != y;
-|        }
-|    };
-|    
-|    bool on_seg(Seg q, Pt point) {
-|        return on_line(q.x, q.y, point) && dot(point-q.x, point-q.y) <= 0;
-|    }
-|    
-|    int S_tr_2(Pt x, Pt y, Pt z) {
-|        return cross(y-x, z-x);
-|    }
-|    
-|    struct Polygon {
-|        vector<Pt> a;
-|    
-|        explicit Polygon(vector<Pt> a_ = {}): a(std::move(a_)) {
-|            if (a.empty()) {
-|                return;
-|            }
-|            normalize();
-|            if (a.size() > 1) {
-|                a.push_back(a[0]);
-|            }
-|        }
-|    
-|        void counterclockwise() {
-|            if (S_2() < 0) {
-|                reverse(a.begin(), a.end());
-|            }
-|        }
-|    
-|        void normalize() {
-|            int n = (int)a.size();
-|            int ind = 1;
-|            while (ind < n-1 && on_line(a[0], a[ind], a[ind+1])) {
-|                ind++;
-|            }
-|            if (ind >= n-1) {
-|                Pt min1 = *min_element(a.begin(), a.end());
-|                Pt max1 = *max_element(a.begin(), a.end());
-|                a = (min1 == max1 ? vector{min1} : vector{min1, max1});
-|                return;
-|            }
-|            rotate(a.begin(), a.begin()+ind, a.end());
-|            a.push_back(a[0]);
-|            vector<Pt> will_a = {a[0]};
-|            for (int q = 1; q < n; q++) {
-|                if (!on_line(will_a.back(), a[q], a[q+1])) {
-|                    will_a.push_back(a[q]);
-|                }
-|            }
-|            a = will_a;
-|        }
-|    
-|        vector<Seg> get_edges() const {
-|            int n = (int)a.size();
-|            vector<Seg> edges;
-|            for (int q = 1; q < n; q++) {
-|                edges.emplace_back(a[q-1], a[q]);
-|            }
-|            return edges;
-|        }
-|    
-|        bool on_border(Pt point) const {
-|            return ranges::any_of(get_edges(), [point](Seg q) {return on_seg(q, point);});
-|        }
-|    
-|        int belonging(Pt point) const { // 0 -> out, 1 -> in, 2 -> border
-|            if (on_border(point)) {
-|                return 2;
-|            }
-|            ld ang = 0;
-|            for (Seg q : get_edges()) {
-|                ang += angle(q.x-point, q.y-point);
-|            }
-|            // will be 0 or 2*pi
-|            return abs(ang) > numbers::pi_v<ld>;
-|        }
-|    
-|        int S_2() const {
-|            int ans = 0;
-|            for (Seg q : get_edges()) {
-|                ans += S_tr_2(a[0], q.x, q.y);
-|            }
-|            return ans;
-|        }
-|    };
-|    
-|    bool need_pop_back(Pt x, vector<Pt>& ans, bool up) {
-|        int m = (int)ans.size(), sign = 2*up-1;
-|        return m >= 2 && cross(ans[m-1]-ans[m-2], x-ans[m-2])*sign >= 0;
-|    }
-|    
-|    void make_envelope(vector<Pt>& a, bool up) {
-|        int n = (int)a.size();
-|        vector<Pt> ans = {a[0]};
-|        for (int q = 1; q < n; q++) {
-|            while (need_pop_back(a[q], ans, up)) {
-|                ans.pop_back();
-|            }
-|            ans.push_back(a[q]);
-|        }
-|        a = ans;
-|    }
-|    
-|    Polygon convex_hull(vector<Pt> a) {
-|        int n = (int)a.size();
-|        sort(a.begin(), a.end());
-|        if (n == 0 || a[0] == a.back()) {
-|            return Polygon(n == 0 ? vector<Pt>{} : vector{a[0]});
-|        }
-|        vector<Pt> up = {a[0]}, down = {a[0]};
-|        for (int q = 1; q < n-1; q++) {
-|            int value = cross(a.back()-a[0], a[q]-a[0]);
-|            if (value > 0) {
-|                up.push_back(a[q]);
-|            } else if (value < 0) {
-|                down.push_back(a[q]);
-|            }
-|        }
-|        up.push_back(a.back());
-|        down.push_back(a.back());
-|        make_envelope(up, true);
-|        make_envelope(down, false);
-|        up.insert(up.end(), down.rbegin()+1, down.rend()-1);
-|        return Polygon(up);
-|    }
-\end{verbatim}
-
-\section*{Binary\_Gauss}
-\begin{verbatim}
-|    #include <tr2/dynamic_bitset>
-|    using Bitset = tr2::dynamic_bitset<>;
-|    
-|    struct Gauss {
-|        vector<Bitset> a;
-|        int n, m;
-|    
-|        explicit Gauss(auto& a_): n(a_.size()), m(a_[0].size()) {
-|            for (int q = 0; q < n; q++) {
-|                a.emplace_back(m);
-|                for (int q1 = 0; q1 < m; q1++) {
-|                    a[q][q1] = a_[q][q1];
-|                }
-|            }
-|        }
-|    
-|        void subtract(int q, int q1) {
-|            for (int q2 = 0; q2 < n; q2++) {
-|                if (q != q2 && a[q2][q1]) {
-|                    a[q2] ^= a[q];
-|                }
-|            }
-|        }
-|    
-|        void gauss() {
-|            for (int q = 0; q < n; q++) {
-|                int q1 = (int)a[q].find_first();
-|                if (q1 != m) {
-|                    subtract(q, q1);
-|                }
-|            }
-|        }
-|    
-|        auto annihilator() const {
-|            vector<int> leader(n);
-|            for (int q = 0; q < n; q++) {
-|                leader[q] = (int)a[q].find_first();
-|            }
-|            vector<Bitset> ans;
-|            for (int q1 = 0; q1 < m; q1++) {
-|                if (ranges::find(leader, q1) != leader.end()) {
-|                    continue;
-|                }
-|                ans.emplace_back(m+1);
-|                for (int q = 0; q < n; q++) {
-|                    ans.back()[leader[q]] = a[q][q1];
-|                }
-|                ans.back().resize(m);
-|                ans.back()[q1] = true;
-|            }
-|            return ans;
-|        }
-|    };
-\end{verbatim}
-
-\section*{SLAE\_solve\_module}
-\begin{verbatim}
-|    const int C = 1000000007;
-|    
-|    int pow1(int x, int y) {
-|        if (y == 0) {
-|            return 1;
-|        }
-|        if (y % 2 == 0) {
-|            return pow1(x*x % C, y/2);
-|        }
-|        return pow1(x, y-1)*x % C;
-|    }
-|    
-|    struct Matrix {
-|        vector<vector<int>> a;
-|        int n, m;
-|    
-|        Matrix(vector<vector<int>> &a1) {
-|            n = a1.size(), m = a1[0].size(), a = a1;
-|        }
-|    
-|        void subtract(int q, int q1) {
-|            int del = pow1(a[q][q1], C-2);
-|            vector<int> norm;
-|            for (int q3 = 0; q3 < m; q3++) {
-|                if (a[q][q3] != 0) {
-|                    norm.push_back(q3);
-|                }
-|            }
-|            for (int q2 = q+1; q2 < n; q2++) {
-|                if (a[q2][q1] != 0) {
-|                    int coef = a[q2][q1]*del % C;
-|                    for (int q3 : norm) {
-|                        a[q2][q3] -= a[q][q3]*coef % C;
-|                        a[q2][q3] += (a[q2][q3] < 0)*C;
-|                    }
-|                }
-|            }
-|        }
-|    
-|        void gauss() {
-|            int q = 0, q1 = 0;
-|            while (q < n && q1 < m) {
-|                for (int q2 = q; q2 < n; q2++) {
-|                    if (a[q2][q1] != 0) {
-|                        swap(a[q], a[q2]);
-|                        break;
-|                    }
-|                }
-|                if (a[q][q1] == 0) {
-|                    q1++;
-|                    continue;
-|                }
-|                subtract(q++, q1++);
-|            }
-|        }
-|    
-|        vector<int> solve() {
-|            gauss();
-|            int q = n;
-|            bool flag = true;
-|            while (flag && (q--) > 0) {
-|                for (int q1 : a[q]) {
-|                    flag &= (abs(q1) == 0);
-|                }
-|            }
-|            if (q == -1) {
-|                return {C};
-|            }
-|            flag = true;
-|            for (int q1 = 0; q1 < m-1; q1++) {
-|                flag &= (a[q][q1] == 0);
-|            }
-|            if (flag) {
-|                return {};
-|            }
-|            if (q < n-1 || n != m-1) {
-|                return {C};
-|            }
-|            vector<int> ans(n);
-|            for (; q > -1; q--) {
-|                int sum1 = a[q][m-1];
-|                for (int q1 = q+1; q1 < m-1; q1++) {
-|                    sum1 -= a[q][q1]*ans[q1] % C;
-|                }
-|                ans[q] = (sum1 % C+C) % C*pow1(a[q][q], C-2) % C;
-|            }
-|            return ans;
-|        }
-|    };
-\end{verbatim}
-
-\section*{Berlekamp}
-\begin{verbatim}
-|    const int C = 1791179179;
-|    
-|    int pow1(int x, int y) {
-|        if (y == 0) {
-|            return 1;
-|        }
-|        if (y % 2 == 0) {
-|            return pow1(x*x % C, y/2);
-|        }
-|        return pow1(x, y-1)*x % C;
-|    }
-|    
-|    vector<int> Berlekamp(vector<int> &rec) {
-|        int n = rec.size(), q1 = 0;
-|        while (q1 < n && rec[q1] == 0) {
-|            q1++;
-|        }
-|        if (q1 == n) {
-|            return {};
-|        }
-|        int t = rec[q1] % C, q2 = q1++;
-|        vector<int> was, now = vector<int>(q1, 0);
-|        for (; q1 < n; q1++) {
-|            int d = -rec[q1] % C;
-|            for (int q = 1; q <= now.size(); q++) {
-|                d = (d+now[q-1]*rec[q1-q]) % C;
-|            }
-|            if (d == 0) {
-|                continue;
-|            }
-|            vector<int> will = now;
-|            while (will.size() < q1-q2+(int)was.size()) {
-|                will.push_back(0);
-|            }
-|            int mul = d*pow1(t, C-2) % C;
-|            will[q1-q2-1] = (will[q1-q2-1]+mul) % C;
-|            for (int q = 0; q < was.size(); q++) {
-|                will[q1-q2+q] = (will[q1-q2+q]-was[q]*mul) % C;
-|            }
-|            was = now, now = will, t = d, q2 = q1;
-|        }
-|        for (int& q : now) {
-|            q = (q+C) % C, q -= (q > C/2)*C;
-|        }
-|        while (!now.empty() && now.back() == 0) {
-|            now.pop_back();
-|        }
-|        return now;
-|    }
-|    
-|    int stupid(int n) {
-|        //to do
-|    }
-|    
-|    int find_n(int n, bool flag = false) {
-|        int k = 57;
-|        vector<int> a = {0};
-|        for (int q = 1; q < (flag ? n+1 : k); q++) {
-|            a.push_back(stupid(q));
-|        }
-|        vector<int> rec = Berlekamp(a);
-|        if (flag) {
-|            for (int q : rec) {
-|                cout << q << ' ';
-|            }
-|            cout << endl;
-|        }
-|        for (int q = k; q <= n; q++) {
-|            a.push_back(0);
-|            for (int q1 = 1; q1 <= rec.size(); q1++) {
-|                a.back() += a[q-q1]*rec[q1-1] % C;
-|            }
-|            a.back() = (a.back() % C+C) % C;
-|        }
-|        return a[n];
-|    }
-\end{verbatim}
-
-\section*{Floor\_sum}
-\begin{verbatim}
-|    int floor_sum(int a, int b, int k) { // [a/b]+...+[k*a/b]
-|        if (a >= b) {
-|            int t = a/b, r = a % b;
-|            return k*(k+1)/2*t+floor_sum(r, b, k);
-|        }
-|        if (a == 0) {
-|            return 0;
-|        }
-|        int m = k*a/b, total = k*m;
-|        int complement = floor_sum(b, a, m);
-|        int on_diag = k*gcd(a, b)/b;
-|        return total+on_diag-complement;
-|    }
-|    
-|    int floor_sum(int a, int b, int l, int r) {
-|        return floor_sum(a, b, max(0LL, r-1))-floor_sum(a, b, max(0LL, l-1));
-|    }
-|    
-|    int sum_mod(int a, int b, int l, int r) {
-|        int amount = r*(r-1)/2-l*(l-1)/2;
-|        return a*amount-b*floor_sum(a, b, l, r);
-|    }
-\end{verbatim}
-
-\section*{Or\_And\_convolution}
-\begin{verbatim}
-|    template <bool Rev = false>
-|    vector<int> SOS(vector<int> a) {
-|        int n = (int)a.size();
-|        for (int q1 = 1; q1 < n; q1 <<= 1) {
-|            for (int q2 = q1; q2 < n; q2 += (q1 << 1)) {
-|                for (int q = q2; q < q2+q1; q++) {
-|                    if constexpr (!Rev) {
-|                        a[q] += a[q ^ q1];
-|                    } else {
-|                        a[q] -= a[q ^ q1];
-|                    }
-|                }
-|            }
-|        }
-|        for (int& q : a) {
-|            q = (q % C+C) % C;
-|        }
-|        return a;
-|    }
-|    
-|    vector<int> num_ones;
-|    
-|    void make_num_ones(int n) {
-|        num_ones.assign(1 << n, 0);
-|        for (int q = 0; q < n; q++) {
-|            num_ones[1 << q] = 1;
-|        }
-|        for (int q = 1; q < (1 << n); q++) {
-|            int last_bit = q-(q & (q-1));
-|            num_ones[q] = num_ones[q ^ last_bit]+num_ones[last_bit];
-|        }
-|    }
-|    
-|    int SOS_value(int q, const vector<int> &a) {
-|        int ans = (1-((num_ones[q] & 1) << 1))*a[0];
-|        for (int q1 = q; q1 > 0; q1 = ((q1-1) & q)) {
-|            ans += (1-((num_ones[q ^ q1] & 1) << 1))*a[q1];
-|        }
-|        return (ans % C+C) % C;
-|    }
-|    
-|    auto or_convolution_SOS(const vector<int> &a, const vector<int> &b) {
-|        int n = (int)a.size();
-|        vector<int> c(n);
-|        for (int q = 0; q < n; q++) {
-|            c[q] = a[q]*b[q] % C;
-|        }
-|        return c;
-|    }
-|    
-|    vector<int> or_convolution(const vector<int>& a, const vector<int>& b) {
-|        return SOS<true>(or_convolution_SOS(SOS(a), SOS(b)));
-|    }
-|    
-|    vector<int> and_convolution(vector<int> a, vector<int> b) {
-|        int n = (int)a.size(), ALL = n-1;
-|        for (int q = 0; q < (n >> 1); q++) {
-|            swap(a[q], a[q ^ ALL]);
-|            swap(b[q], b[q ^ ALL]);
-|        }
-|        vector<int> c = or_convolution(a, b);
-|        for (int q = 0; q < (n >> 1); q++) {
-|            swap(c[q], c[q ^ ALL]);
-|        }
-|        return c;
 |    }
 \end{verbatim}
 
@@ -2045,6 +2036,61 @@
 |    }
 \end{verbatim}
 
+\section*{Annealing\_simulation}
+\begin{verbatim}
+|    mt19937 randint(179);
+|    const int MN = (1LL << 20);
+|    
+|    bool P(int x, int y, ld t) {
+|        ld is = exp((y-x)/t);
+|        return randint() % MN < is*MN;
+|    }
+|    
+|    int get_score(int x, vector<int>& a) {
+|        int ans = 0;
+|        for (int q : a) {
+|            ans += min(3LL, num_bits[q ^ x]);
+|        }
+|        return ans;
+|    }
+|    
+|    int delta_score(int ind, int x, vector<int> &a) {
+|        int score = 0, w = a[ind];
+|        a[ind] = x;
+|        score += get_score(a[ind], a);
+|        a[ind] = w;
+|        score -= get_score(a[ind], a);
+|        return score*2;
+|    }
+|    
+|    auto annealing(int n) {
+|        vector<int> a(1 << k);
+|        iota(a.begin(), a.end(), 0);
+|        shuffle(a.begin(), a.end(), randint);
+|        a.resize(n);
+|        int score = 0;
+|        for (int q : a) {
+|            score += get_score(q, a);
+|        }
+|        ld t = 1000, gamma = 0.999;
+|        ld prev_t = t;
+|        while (t > 0.001) {
+|            if (prev_t > 1.1*t) {
+|                cerr << t << endl;
+|                prev_t = t;
+|            }
+|            int ind = randint() % a.size();
+|            int x = randint() % (1 << k);
+|            int delta = delta_score(ind, x, a);
+|            if (delta >= 0 || P(score, score+delta, t)) {
+|                a[ind] = x, score += delta;
+|            }
+|            t *= gamma;
+|        }
+|        return pair{score, a};
+|    }
+\end{verbatim}
+
 \section*{CHT}
 \begin{verbatim}
 |    #define ld long double
@@ -2103,131 +2149,64 @@
 \begin{verbatim}
 |    struct Line {
 |        int k, b;
-|    
-|        Line(): k(0), b(INF) {}
-|        Line(int k, int b): k(k), b(b) {}
-|    
-|        int value(int x) const {
+|     
+|        int val(int x) {
 |            return k*x+b;
 |        }
 |    };
-|    
-|    struct Node {
-|        Line line;
-|        Node *l, *r;
-|    
-|        explicit Node(Line line): line(line), l(nullptr), r(nullptr) {}
-|    
-|        void make_sons() {
-|            if (l == nullptr) {
-|                l = new Node(Line());
+|     
+|    struct Li_Chao {
+|        vector<Line> a;
+|        int len = 1;
+|     
+|        Li_Chao(int n) {
+|            while (len < n) {
+|                len *= 2;
 |            }
-|            if (r == nullptr) {
-|                r = new Node(Line());
+|            a.assign(2*len, {0, INF});
+|        }
+|     
+|        void descent(int l, int r, int q, Line line) {
+|            while (q < 2*len) {
+|                int m = (l+r) >> 1;
+|                if (a[q].val(m) > line.val(m)) {
+|                    swap(a[q], line);
+|                }
+|                if (a[q].val(l) > line.val(l)) {
+|                    r = m;
+|                } else {
+|                    l = m;
+|                }
+|                q *= 2, q += (l == m);
 |            }
 |        }
-|    };
-|    
-|    struct Li_Chao { // min
-|        Node* root;
-|        int MIN, MAX;
-|    
-|        Li_Chao(int MIN, int MAX): MIN(MIN), MAX(MAX), root(new Node(Line())) {}
-|    
-|        static void add(int l, int r, Node* tree, Line line) {
-|            int m = (l+r)/2;
-|            if (line.value(m) < tree->line.value(m)) {
-|                swap(line, tree->line);
-|            }
-|            if (r-l == 1) {
+|     
+|        void add(int l, int r, int L, int R, int q, Line line) {
+|            if (l >= R || L >= r) {
 |                return;
 |            }
-|            tree->make_sons();
-|            if (line.k < tree->line.k) {
-|                add(m, r, tree->r, line);
-|            } else {
-|                add(l, m, tree->l, line);
+|            if (L <= l && r <= R) {
+|                descent(l, r, q, line);
+|                return;
 |            }
+|            int m = (l+r) >> 1;
+|            add(l, m, L, R, 2*q, line);
+|            add(m, r, L, R, 2*q+1, line);
 |        }
-|    
-|        void add(Line line) const {
-|            add(MIN, MAX, root, line);
+|     
+|        void add(int l, int r, Line line) {
+|            add(0, len, l, r, 1, line);
 |        }
-|    
-|        static int ans(int l, int r, Node* tree, int x) {
-|            int answer = tree->line.value(x);
-|            if (r-l == 1) {
-|                return answer;
+|     
+|        int ans(int x) {
+|            int q = x+len, res = INF;
+|            while (q > 0) {
+|                res = min(res, a[q].val(x));
+|                q >>= 1;
 |            }
-|            tree->make_sons();
-|            int m = (l+r)/2;
-|            if (x < m) {
-|                answer = min(answer, ans(l, m, tree->l, x));
-|            } else {
-|                answer = min(answer, ans(m, r, tree->r, x));
-|            }
-|            return answer;
-|        }
-|    
-|        int ans(int x) const {
-|            return ans(MIN, MAX, root, x);
+|            return res;
 |        }
 |    };
-\end{verbatim}
-
-\section*{Annealing\_simulation}
-\begin{verbatim}
-|    mt19937 randint(179);
-|    const int MN = (1LL << 20);
-|    
-|    bool P(int x, int y, ld t) {
-|        ld is = exp((y-x)/t);
-|        return randint() % MN < is*MN;
-|    }
-|    
-|    int get_score(int x, vector<int>& a) {
-|        int ans = 0;
-|        for (int q : a) {
-|            ans += min(3LL, num_bits[q ^ x]);
-|        }
-|        return ans;
-|    }
-|    
-|    int delta_score(int ind, int x, vector<int> &a) {
-|        int score = 0, w = a[ind];
-|        a[ind] = x;
-|        score += get_score(a[ind], a);
-|        a[ind] = w;
-|        score -= get_score(a[ind], a);
-|        return score*2;
-|    }
-|    
-|    auto annealing(int n) {
-|        vector<int> a(1 << k);
-|        iota(a.begin(), a.end(), 0);
-|        shuffle(a.begin(), a.end(), randint);
-|        a.resize(n);
-|        int score = 0;
-|        for (int q : a) {
-|            score += get_score(q, a);
-|        }
-|        ld t = 1000, gamma = 0.999;
-|        ld prev_t = t;
-|        while (t > 0.001) {
-|            if (prev_t > 1.1*t) {
-|                cerr << t << endl;
-|                prev_t = t;
-|            }
-|            int ind = randint() % a.size();
-|            int x = randint() % (1 << k);
-|            int delta = delta_score(ind, x, a);
-|            if (delta >= 0 || P(score, score+delta, t)) {
-|                a[ind] = x, score += delta;
-|            }
-|            t *= gamma;
-|        }
-|        return pair{score, a};
-|    }
 \end{verbatim}
 
 \section*{something\_useful}
@@ -2302,11 +2281,11 @@
 \section*{Aho\_Corasick}
 \begin{verbatim}
 |    const int E = 26;
-|    vector<vector<int>> d = {vector<int>(E, -1)};
-|    vector<int> term = {0}, suflink, num_term;
 |    const char FIRST = 'a';
+|    vector<vector<int>> d = {vector<int>(E, -1)};
+|    vector<int> term = {0};
 |    
-|    int add_symbol(int vertex, char w) {
+|    int go_create(int vertex, char w) {
 |        w -= FIRST;
 |        if (d[vertex][w] == -1) {
 |            d[vertex][w] = (int)d.size();
@@ -2319,70 +2298,43 @@
 |    int add_string(const string& s) {
 |        int vertex = 0;
 |        for (char q : s) {
-|            vertex = add_symbol(vertex, q);
+|            vertex = go_create(vertex, q);
 |        }
 |        term[vertex]++;
 |        return vertex;
 |    }
 |    
-|    int build_suflink(int vertex, int q) {
-|        int q1 = suflink[vertex];
-|        while (q1 != -1 && d[q1][q] == -1) {
-|            q1 = suflink[q1];
+|    vector<vector<int>> go;
+|    vector<int> suf;
+|    
+|    int step(int vertex, int q) {
+|        if (vertex == -1) {
+|            return 0;
 |        }
-|        return q1 == -1 ? 0 : d[q1][q];
+|        int x = d[vertex][q], par = suf[vertex];
+|        int y = (par == -1 ? 0 : go[par][q]);
+|        return x == -1 ? y : x;
 |    }
 |    
-|    void make_suflinks() {
-|        suflink.assign(d.size(), -1), num_term.assign(d.size(), 0);
+|    void build_suflinks() {
+|        int m = (int)d.size();
+|        go = d, suf.assign(m, -1);
 |        queue<int> a;
 |        a.push(0);
-|        num_term[0] = term[0];
 |        while (!a.empty()) {
-|            int vertex = a.front();
+|            int x = a.front();
 |            a.pop();
-|            for (int q_ = 0; q_ < E; q_++) {
-|                int q = d[vertex][q_];
-|                if (q != -1) {
-|                    suflink[q] = build_suflink(vertex, q_);
-|                    num_term[q] = term[q]+num_term[suflink[q]];
-|                    a.push(q);
+|            int num = (suf[x] == -1 ? 0 : term[suf[x]]);
+|            term[x] += num;
+|            for (int q = 0; q < E; q++) {
+|                go[x][q] = step(x, q);
+|                if (d[x][q] != -1) {
+|                    suf[d[x][q]] = step(suf[x], q);
+|                    a.push(d[x][q]);
 |                }
 |            }
 |        }
 |    }
-\end{verbatim}
-
-\section*{Hash}
-\begin{verbatim}
-|    static constexpr int mods[] = {
-|            1791179179, 1791791791,
-|            1057057179057179057
-|    };
-|    
-|    static constexpr int muls[] = {
-|            17957179, 179,
-|            179179057,
-|    };
-|    
-|    template <typename T>
-|    struct Hash {
-|        const int C, D;
-|        vector<int> degs, hashs;
-|    
-|        Hash(const T& s, int type = 0): C(mods[type]), D(muls[type]) {
-|            degs = {1}, hashs = {0};
-|            for (auto q : s) {
-|                degs.push_back(degs.back()*D % C);
-|                hashs.push_back((hashs.back()*D+q) % C);
-|            }
-|        }
-|    
-|        int hash(int l, int r) const {
-|            int ans = (hashs[r]-hashs[l]*degs[r-l]) % C;
-|            return ans+(ans < 0)*C;
-|        }
-|    };
 \end{verbatim}
 
 \section*{Manacher}
@@ -2599,240 +2551,253 @@
 |    };
 \end{verbatim}
 
-\newpage
-\section*{Z\_function}
+\section*{Disjoint\_Sparse\_Table}
 \begin{verbatim}
-|    vector<int> z_func(const string& s) {
-|        int n = (int)s.size();
-|        vector<int> z(n, 0);
-|        int ind_max = 0, right_max = 1;
-|        for (int q = 1; q < n; q++) {
-|            if (q+z[q-ind_max] < right_max) {
-|                z[q] = z[q-ind_max];
-|                continue;
+|    int C;
+|    
+|    struct Disjoint_Table {
+|        vector<vector<int>> s;
+|        vector<int> level;
+|        int n, len = 1, log = 0;
+|    
+|        Disjoint_Table(vector<int> a): n(a.size()) {
+|            while (len <= n) {
+|                len *= 2, log++;
 |            }
-|            while (right_max < n && s[right_max-q] == s[right_max]) {
-|                right_max++;
+|            a.resize(len, 0);
+|            s.assign(log, vector<int>(len, 1));
+|            level = {log};
+|            for (int q = 1; q < len; q++) {
+|                level.push_back(level[q >> 1]-1);
 |            }
-|            z[q] = right_max-q;
-|            ind_max = q, right_max += (z[q] == 0);
+|            build(0, len, a, 0);
 |        }
-|        return z;
-|    }
+|    
+|        void build(int l, int r, vector<int>& a, int h) {
+|            if (r-l == 1) {
+|                return;
+|            }
+|            int m = (l+r) >> 1;
+|            for (int q = m-1; q >= l; q--) {
+|                s[h][q] = s[h][q+1]*a[q] % C;
+|            }
+|            for (int q = m+1; q < r; q++) {
+|                s[h][q] = s[h][q-1]*a[q-1] % C;
+|            }
+|            build(l, m, a, h+1);
+|            build(m, r, a, h+1);
+|        }
+|    
+|        int ans(int l, int r) {
+|            if (l >= r) {
+|                return 1;
+|            }
+|            int h = level[l ^ r];
+|            return s[h][l]*s[h][r] % C;
+|        }
+|    };
 \end{verbatim}
 
-\section*{Persistent\_DO}
+\section*{Fenwick}
 \begin{verbatim}
-|    struct Node {
-|        int x;
-|        Node *l, *r;
+|    struct Fen {
+|        vector<int> fen;
+|        int n;
 |    
-|        Node(int x1 = 0): x(x1), l(nullptr), r(nullptr) {}
+|        Fen(int n1) {
+|            n = n1+1;
+|            fen.assign(n, 0);
+|        }
+|    
+|        void plus(int q, int x) {
+|            for (++q; q < n; q += (q & -q)) {
+|                fen[q] += x;
+|            }
+|        }
+|    
+|        int sum(int q) {
+|            int res = 0;
+|            for (; q > 0; q -= (q & -q)) {
+|                res += fen[q];
+|            }
+|            return res;
+|        }
+|    
+|        int sum(int l, int r) {
+|            return sum(r)-sum(l);
+|        }
 |    };
-|    
-|    void update(Node* tree) {
-|        tree->x = (tree->l != nullptr ? tree->l->x : 0)+(tree->r != nullptr ? tree->r->x : 0);
-|    }
-|    
-|    Node* build(int l, int r) {
-|        Node* now = new Node();
-|        if (r-l == 1) {
-|            return now;
-|        }
-|        int m = (l+r)/2;
-|        now->l = build(l, m), now->r = build(m, r);
-|        update(now);
-|        return now;
-|    }
-|    
-|    Node* change(Node* tree, int l, int r, int q, int x) {
-|        if (r-l == 1) {
-|            return new Node(x);
-|        }
-|        Node* now = new Node();
-|        int m = (l+r)/2;
-|        if (q < m) {
-|            now->l = change(tree->l, l, m, q, x), now->r = tree->r;
-|        } else {
-|            now->l = tree->l, now->r = change(tree->r, m, r, q, x);
-|        }
-|        update(now);
-|        return now;
-|    }
-|    
-|    int ans(Node* tree, int l, int r, int l1, int r1) {
-|        if (l1 >= r || l >= r1) {
-|            return 0;
-|        }
-|        if (l1 <= l && r <= r1) {
-|            return tree->x;
-|        }
-|        int m = (l+r)/2;
-|        return ans(tree->l, l, m, l1, r1)+ans(tree->r, m, r, l1, r1);
-|    }
 \end{verbatim}
 
 \section*{DO\_bottom\_up}
 \begin{verbatim}
+|    template <typename T>
 |    struct DO {
-|        vector<int> do_arr, mins;
-|        vector<bool> degs;
-|        int len;
-|     
-|        DO(vector<int> a) {
-|            len = 1;
-|            while (len < a.size()) {
-|                len <<= 1;
+|        vector<T> a;
+|        int n, len = 1;
+|    
+|        T func(T x, T y) {return max(x, y);}
+|        T I = -INF;
+|    
+|        DO(const vector<T>& init) {
+|            n = (int)init.size();
+|            while (len < n) {
+|                len *= 2;
 |            }
-|            do_arr.assign(len << 1, 0), mins.assign(len << 1, INF);
-|            degs.assign(len << 1, false), degs[len] = true;
-|            for (int q = len; q < a.size()+len; q++) {
-|                do_arr[q] = mins[q] = a[q-len];
+|            a.assign(2*len, I);
+|            for (int q = len; q < len+n; q++) {
+|                a[q] = init[q-len];
 |            }
 |            for (int q = len-1; q > 0; q--) {
-|                do_arr[q] = do_arr[q << 1]+do_arr[(q << 1)+1];
-|                mins[q] = min(mins[q << 1], mins[(q << 1)+1]);
-|                degs[q] = degs[q << 1];
+|                a[q] = func(a[2*q], a[2*q+1]);
 |            }
 |        }
-|     
-|        void change(int q, int x) {
-|            do_arr[q+len] = x, mins[q+len] = x;
-|            q = ((q+len) >> 1);
+|    
+|        void change(int q, T x) {
+|            a[q+len] = x;
+|            q = (q+len) >> 1;
 |            while (q > 0) {
-|                do_arr[q] = do_arr[q << 1]+do_arr[(q << 1)+1];
-|                mins[q] = min(mins[q << 1], mins[(q << 1)+1]);
+|                a[q] = func(a[2*q], a[2*q+1]);
 |                q >>= 1;
 |            }
 |        }
-|     
-|        int ans(int l, int r) {
-|            if (l >= r) {
-|                return 0;
+|    
+|        T ans(int l, int r) {
+|            l += len-1, r += len;
+|            T res_l = I, res_r = I;
+|            while (r-l > 1) {
+|                if ((l & 1) ^ 1) {
+|                    res_l = func(res_l, a[l ^ 1]);
+|                }
+|                if (r & 1) {
+|                    res_r = func(a[r ^ 1], res_r);
+|                }
+|                l >>= 1, r >>= 1;
 |            }
-|            l += len, r += len-1;
-|            int sum1 = 0;
-|            while (l < r) {
-|                sum1 += (l & 1)*do_arr[l];
-|                l = ((l+1) >> 1);
-|                sum1 += ((r & 1) ^ 1)*do_arr[r];
-|                r = ((r-1) >> 1);
-|            }
-|            return sum1+(l == r)*do_arr[l];
+|            return func(res_l, res_r);
 |        }
-|     
-|        int left_less(int q, int x) {
+|    
+|        int right_more(int q, T x) {
 |            q += len;
-|            while (!degs[q] && mins[q] >= x) {
-|                q = ((q-1) >> 1);
+|            while (q > 0 && ((q & 1) || a[q ^ 1] <= x)) {
+|                q >>= 1;
 |            }
-|            if (mins[q] >= x) {
-|                return -1;
+|            q ^= 1;
+|            if (a[q] <= x) {
+|                return n;
 |            }
 |            while (q < len) {
-|                q = (q << 1)+(mins[(q << 1)+1] < x);
+|                q <<= 1;
+|                q ^= (a[q] <= x);
 |            }
 |            return q-len;
 |        }
 |    };
 \end{verbatim}
 
-\section*{Implicit\_DO}
+\section*{Persistent\_DO}
 \begin{verbatim}
 |    struct Node {
-|        int left, right;
-|        Node *l, *r;
-|        int size;
-|    
-|        Node(int left1, int right1):
-|            left(left1), right(right1), l(nullptr), r(nullptr), size(0) {}
+|        int sum = 0;
+|        int l = 0, r = 0;
 |    };
 |    
-|    void make_sons(Node* tree) {
-|        int m = ((tree->left+tree->right) >> 1);
-|        if (tree->l == nullptr) {
-|            tree->l = new Node(tree->left, m);
-|        }
-|        if (tree->r == nullptr) {
-|            tree->r = new Node(m, tree->right);
-|        }
+|    vector<Node> nodes = {Node()};
+|    
+|    int create_node(int ind = 0) {
+|        nodes.push_back(nodes[ind]);
+|        return (int)nodes.size()-1;
 |    }
 |    
-|    void add(Node* tree, int x) {
-|        int l = tree->left, r = tree->right;
-|        tree->size++;
-|        if (r-l == 1) {
-|            return;
+|    void update_DO(int ind) {
+|        Node& node = nodes[ind];
+|        node.sum = nodes[node.l].sum+nodes[node.r].sum;
+|    }
+|    
+|    int build_DO(int n) {
+|        int ind = create_node();
+|        if (n != 1) {
+|            nodes[ind].l = build_DO(n/2);
+|            nodes[ind].r = build_DO(n-n/2);
 |        }
-|        make_sons(tree);
-|        int m = ((l+r) >> 1);
-|        if (x < m) {
-|            add(tree->l, x);
+|        return ind;
+|    }
+|    
+|    int change_DO(int ind, int l, int r, int q, int x) {
+|        int new_ind = create_node(ind);
+|        if (r-l == 1) {
+|            nodes[new_ind].sum = x;
+|            return new_ind;
+|        }
+|        int m = (l+r) >> 1;
+|        if (q < m) {
+|            nodes[new_ind].l = change_DO(nodes[ind].l, l, m, q, x);
 |        } else {
-|            add(tree->r, x);
+|            nodes[new_ind].r = change_DO(nodes[ind].r, m, r, q, x);
 |        }
+|        update_DO(new_ind);
+|        return new_ind;
 |    }
 |    
-|    void del(Node* tree, int x) {
-|        int l = tree->left, r = tree->right;
-|        tree->size--;
-|        if (r-l == 1) {
-|            return;
+|    int ans_DO(int ind, int l, int r, int L, int R) {
+|        if (l >= R || L >= r) {
+|            return 0;
 |        }
-|        make_sons(tree);
-|        int m = ((l+r) >> 1);
-|        if (x < m) {
-|            del(tree->l, x);
-|        } else {
-|            del(tree->r, x);
+|        if (L <= l && r <= R) {
+|            return nodes[ind].sum;
 |        }
+|        int m = (l+r) >> 1;
+|        int ans_l = ans_DO(nodes[ind].l, l, m, L, R);
+|        int ans_r = ans_DO(nodes[ind].r, m, r, L, R);
+|        return ans_l+ans_r;
 |    }
 |    
-|    int num_x(Node* tree, int x) {
-|        int l = tree->left, r = tree->right;
-|        if (r-l == 1) {
-|            return tree->size*(x == l);
+|    struct DO {
+|        int n, root;
+|    
+|        DO(int n, int ind): n(n), root(ind) {}
+|    
+|        DO change(int q, int x) {
+|            int new_root = change_DO(root, 0, n, q, x);
+|            return {n, new_root};
 |        }
-|        make_sons(tree);
-|        int m = ((l+r) >> 1);
-|        if (x < m) {
-|            return num_x(tree->l, x);
+|    
+|        int ans(int l, int r) {
+|            return ans_DO(root, 0, n, l, r);
 |        }
-|        return num_x(tree->r, x)+tree->l->size;
-|    }
+|    };
 \end{verbatim}
 
 \section*{DD}
 \begin{verbatim}
-|    mt19937 randint(179);
+|    mt19937 randint(17957179);
 |    
 |    struct Node {
-|        int x, y;
-|        Node *l, *r;
-|        int size;
+|        static Node* null;
 |    
-|        Node(int x1): x(x1), y(randint()), l(nullptr), r(nullptr), size(1) {}
+|        int x, y, size, sum;
+|        Node *l, *r;
+|    
+|        Node(int x): x(x), y(randint()), size(1), sum(x) {
+|            if (null == nullptr) {
+|                size = 0, null = this;
+|            }
+|            l = r = null;
+|        }
 |    };
 |    
+|    Node* Node::null = new Node(0);
+|    Node* null = Node::null;
+|    
 |    void update(Node* tree) {
-|        if (tree == nullptr) {
-|            return;
-|        }
-|        tree->size = 1;
-|        if (tree->l != nullptr) {
-|            tree->size += tree->l->size;
-|        }
-|        if (tree->r != nullptr) {
-|            tree->size += tree->r->size;
-|        }
+|        tree->size = 1, tree->sum = tree->x;
+|        tree->size += tree->l->size, tree->sum += tree->l->sum;
+|        tree->size += tree->r->size, tree->sum += tree->r->sum;
 |    }
 |    
 |    Node* merge(Node* tree1, Node* tree2) {
-|        if (tree1 == nullptr) {
-|            return tree2;
-|        }
-|        if (tree2 == nullptr) {
-|            return tree1;
+|        if (tree1 == null || tree2 == null) {
+|            return tree1 == null ? tree2 : tree1;
 |        }
 |        if (tree1->y < tree2->y) {
 |            tree1->r = merge(tree1->r, tree2);
@@ -2845,62 +2810,32 @@
 |    }
 |    
 |    pair<Node*, Node*> split(Node* tree, int x) {
-|        if (tree == nullptr) {
-|            return {nullptr, nullptr};
+|        if (tree == null) {
+|            return {null, null};
 |        }
 |        if (tree->x <= x) {
-|            pair<Node*, Node*> trees = split(tree->r, x);
-|            tree->r = trees.first;
+|            auto [left, right] = split(tree->r, x);
+|            tree->r = left;
 |            update(tree);
-|            return {tree, trees.second};
+|            return {tree, right};
 |        }
-|        pair<Node*, Node*> trees = split(tree->l, x);
-|        tree->l = trees.second;
+|        auto [left, right] = split(tree->l, x);
+|        tree->l = right;
 |        update(tree);
-|        return {trees.first, tree};
-|    }
-|    
-|    pair<Node*, Node*> split_num(Node* tree, int k) {
-|        if (tree == nullptr) {
-|            return {nullptr, nullptr};
-|        }
-|        int t = (tree->l != nullptr ? tree->l->size : 0);
-|        if (t < k) {
-|            pair<Node*, Node*> trees = split_num(tree->r, k-t-1);
-|            tree->r = trees.first;
-|            update(tree);
-|            return {tree, trees.second};
-|        }
-|        pair<Node*, Node*> trees = split_num(tree->l, k);
-|        tree->l = trees.second;
-|        update(tree);
-|        return {trees.first, tree};
+|        return {left, tree};
 |    }
 |    
 |    Node* add(Node* tree, int x) {
-|        pair<Node*, Node*> trees = split(tree, x);
-|        Node* now = new Node(x);
-|        return merge(merge(trees.first, now), trees.second);
+|        Node* node = new Node(x);
+|        auto [left, right] = split(tree, x);
+|        return merge(merge(left, node), right);
 |    }
 |    
 |    Node* del(Node* tree, int x) {
-|        pair<Node*, Node*> trees = split(tree, x);
-|        int k = (trees.first != nullptr ? trees.first->size-1 : 0);
-|        pair<Node*, Node*> trees1 = split_num(trees.first, k);
-|        return merge(trees1.first, trees.second);
-|    }
-|    
-|    int num_x(Node* tree, int x) {
-|        int ans = 0;
-|        while (tree != nullptr) {
-|            if (tree->x <= x) {
-|                ans += (tree->l != nullptr ? tree->l->size : 0)+1;
-|                tree = tree->r;
-|            } else {
-|                tree = tree->l;
-|            }
-|        }
-|        return ans;
+|        auto [less_equal, more] = split(tree, x);
+|        auto [less, equal] = split(less_equal, x-1);
+|        Node *eq_l = equal->l, *eq_r = equal->r;
+|        return merge(merge(less, eq_l), merge(eq_r, more));
 |    }
 \end{verbatim}
 
@@ -3121,85 +3056,52 @@
 |    }
 \end{verbatim}
 
-\section*{Fenwick}
-\begin{verbatim}
-|    struct Fen {
-|        vector<int> fen;
-|        int n;
-|    
-|        Fen(int n1) {
-|            n = n1+1;
-|            fen.assign(n, 0);
-|        }
-|    
-|        void plus(int q, int x) {
-|            for (++q; q < n; q += (q & -q)) {
-|                fen[q] += x;
-|            }
-|        }
-|    
-|        int sum(int q) {
-|            int res = 0;
-|            for (; q > 0; q -= (q & -q)) {
-|                res += fen[q];
-|            }
-|            return res;
-|        }
-|    
-|        int sum(int l, int r) {
-|            return sum(r)-sum(l);
-|        }
-|    };
-\end{verbatim}
-
 \newpage
 \section*{ICPC\_algorithms}
 \begin{verbatim}
+|    ./graph/Articulation_points.cpp
 |    ./graph/flow/Dinitz.cpp
 |    ./graph/flow/Ford_Fulkerson.cpp
 |    ./graph/flow/Min_cost.cpp
-|    ./graph/shortest_paths/Ford_Bellman.cpp
-|    ./graph/tree/LCA/LCA_linear_memory.cpp
-|    ./graph/tree/Compressed_tree.cpp
-|    ./graph/tree/HLD.cpp
-|    ./graph/Bridges.cpp
-|    ./graph/CSS.cpp
-|    ./graph/Points_articulation.cpp
-|    ./graph/Eulerian_cycle.cpp
 |    ./graph/Kun.cpp
-|    ./math/delivers/Pollard.cpp
+|    ./graph/tree/HLD.cpp
+|    ./graph/tree/LCA/LCA_linear_memory.cpp
+|    ./math/Berlekamp.cpp
+|    ./math/FFT/FFT_complex.cpp
 |    ./math/FFT/FFT_divide.cpp
 |    ./math/FFT/FFT_modulo.cpp
+|    ./math/FFT/FPS.cpp
 |    ./math/FFT/online_FFT.cpp
-|    ./math/functions/C_k_n_any_modulo.cpp
-|    ./math/functions/N_th_root.cpp
-|    ./math/geometry/double.cpp
-|    ./math/geometry/polygons.cpp
-|    ./math/matrix/Binary_Gauss.cpp
-|    ./math/matrix/SLAE_solve_module.cpp
-|    ./math/Berlekamp.cpp
 |    ./math/Floor_sum.cpp
+|    ./math/functions/ax_by_c.cpp
+|    ./math/functions/C_k_n_any_modulo.cpp
+|    ./math/functions/C_k_n_modulo_p.cpp
+|    ./math/functions/N_th_root.cpp
+|    ./math/functions/Square_root.cpp
+|    ./math/geometry/basic.cpp
+|    ./math/geometry/polygons.cpp
+|    ./math/Grice_Misra_sieve.cpp
+|    ./math/matrix/Binary_Gauss.cpp
+|    ./math/matrix/SLAE_solve.cpp
 |    ./math/Or_And_convolution.cpp
+|    ./math/Pollard.cpp
 |    ./math/Smiths_theory.cpp
+|    ./other/Annealing_simulation.cpp
 |    ./other/dp/CHT.cpp
 |    ./other/dp/Li_Chao.cpp
-|    ./other/Annealing_simulation.cpp
 |    ./other/something_useful.cpp
 |    ./other/STL_useful.cpp
 |    ./string/Aho_Corasick.cpp
-|    ./string/Hash.cpp
 |    ./string/Manacher.cpp
 |    ./string/Prefix_function.cpp
 |    ./string/Suffix_array.cpp
 |    ./string/Suffix_automaton.cpp
-|    ./string/Z_function.cpp
-|    ./struct/Segment_Tree/persistent/pointers.cpp
+|    ./struct/Disjoint_Sparse_Table.cpp
+|    ./struct/Fenwick.cpp
 |    ./struct/Segment_Tree/DO_bottom_up.cpp
-|    ./struct/Segment_Tree/Implicit_DO.cpp
+|    ./struct/Segment_Tree/Persistent_DO.cpp
 |    ./struct/Treap/DD.cpp
 |    ./struct/Treap/Implicit_DD.cpp
-|    ./struct/Treap/Persistent_DD.cpp
-|    ./struct/Fenwick.cpp
 \end{verbatim}
 
 \end{center}

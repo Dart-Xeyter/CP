@@ -20,7 +20,7 @@ echo "\documentclass[a4paper, 10pt]{article}
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhead{}
-\fancyhead[LO]{~~~MIPT (Gorbunov, Porai, Savvateev)}
+\fancyhead[LO]{~~~MIPT (Barsukov, Porai, Savvateev)}
 \fancyhead[RO]{Page \thepage\;of 50~~~}
 \fancyfoot{}
 \begin{document}
