@@ -18,6 +18,12 @@ using namespace std;
 
 typedef tree<int, null_type, less<>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
 
+gp_hash_table<int> hash_set;
+
+
+
+
+
 struct my_hash {
     const int seed = chrono::steady_clock::now().time_since_epoch().count();
 
