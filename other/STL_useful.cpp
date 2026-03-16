@@ -18,7 +18,13 @@ using namespace std;
 
 typedef tree<int, null_type, less<>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
 
-gp_hash_table<int> hash_set;
+
+
+
+
+mt19937 gen(17957179);
+uniform_real_distribution<> random(0, 1);
+double x = random(gen)
 
 
 
