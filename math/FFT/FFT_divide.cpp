@@ -10,7 +10,7 @@ vector<int> inverse(vector<int>& A, int n) {
     assert(A[0] != 0);
     vector<int> B0 = {pow1(A[0], C-2)};
     int N = A.size();
-    while (B0.size() <= n) {
+    while (B0.size() < n) {
         int k = B0.size(), len = min(2*k, N);
         vector<int> A_k(A.begin(), A.begin()+len);
         auto A_B0 = multiply(A_k, B0);
@@ -21,31 +21,37 @@ vector<int> inverse(vector<int>& A, int n) {
         auto B1 = multiply(A_B0*(-1), B0);
         B0.insert(B0.end(), B1.begin(), B1.begin()+k);
     }
-    B0.resize(n+1, 0);
+    B0.resize(n, 0);
     return B0;
 }
 
-vector<int> divide(vector<int> A, vector<int> B) {
-    int n = A.size(), m = B.size();
-    if (n < m) {
+vector<int> divide_inv(vector<int> A, vector<int> inv_rev, int m) {
+    int k = (int)A.size()-m+1;
+    if (k <= 0) {
         return {0};
     }
-    int k = n-m+1;
     reverse(A.begin(), A.end());
-    A.resize(k);
-    reverse(B.begin(), B.end());
-    auto Q = multiply(A, inverse(B, k));
+    A.resize(k), inv_rev.resize(k);
+    auto Q = multiply(A, inv_rev);
     Q.resize(k, 0);
     reverse(Q.begin(), Q.end());
     return Q;
 }
 
-vector<int> remainder(vector<int> A, vector<int> B) {
+vector<int> divide(vector<int> A, vector<int> B) {
+    int n = A.size(), m = B.size(), k = n-m+1;
+    if (k <= 0) {
+        return {0};
+    }
+    reverse(B.begin(), B.end());
+    return divide_inv(A, inverse(B, k), m);
+}
+
+vector<int> remainder(vector<int> A, vector<int>& B, vector<int>& Q) {
     int n = A.size(), m = B.size();
     if (n < m) {
         return A;
     }
-    auto Q = divide(A, B);
     Q.resize(min(m, n-m+1));
     auto QB = multiply(Q, B);
     for (int q = 0; q < m; q++) {
@@ -60,15 +66,23 @@ vector<int> remainder(vector<int> A, vector<int> B) {
 }
 
 vector<int> pow1(vector<int> A, int y, vector<int>& MOD) {
-    if (y == 0) {
-        return {1};
+    int m = MOD.size();
+    vector<int> ans = {1};
+    ranges::reverse(MOD);
+    auto inv_rev = inverse(MOD, m);
+    ranges::reverse(MOD);
+    while (y != 0) {
+        if (y & 1) {
+            ans = multiply(ans, A);
+            auto Q = divide_inv(ans, inv_rev, m);
+            ans = remainder(ans, MOD, Q);
+        }
+        A = multiply(A, A);
+        auto Q = divide_inv(A, inv_rev, m);
+        A = remainder(A, MOD, Q);
+        y >>= 1;
     }
-    if (y % 2 == 0) {
-        auto res = remainder(multiply(A, A), MOD);
-        return pow1(res, y/2, MOD);
-    }
-    auto res = multiply(pow1(A, y-1, MOD), A);
-    return remainder(res, MOD);
+    return ans;
 }
 
 int get_rec_coef(vector<int>& rec, vector<int>& a, int N) {
