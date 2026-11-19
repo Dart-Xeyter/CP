@@ -1,16 +1,3 @@
-vector<vector<int>> get_graph() {
-    int n, m;
-    cin >> n >> m;
-    vector<vector<int>> d(n);
-    for (int q = 0; q < m; q++) {
-        int x, y;
-        cin >> x >> y;
-        x--, y--;
-        d[x].push_back(y);
-    }
-    return d;
-}
-
 vector<int> get_smith(vector<vector<int>> &d) {
     int n = (int)d.size();
     vector<vector<int>> d1(n);

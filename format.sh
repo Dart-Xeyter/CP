@@ -1,12 +1,17 @@
 #!/bin/bash
 
-### find -name "*.cpp" | sort -g | xargs ./format.sh > ICPC.tex
+### Script using scenario:
+# find -name "*.cpp" | sort -g | xargs ./format.sh > ICPC.tex
 # cat ICPC_algorithms.txt | xargs ./format.sh > ICPC.tex
 # ./format.sh ICPC_algorithms.txt >> ICPC.tex
 
-# geometry -> points
-# math -> pow, factor
-# graph -> LCA, DO (HLD)
+### Delete for space saving:
+# graph -> LCA
+# geometry -> Pt;
+# FFT -> rev_bits;
+# math -> pow, factor;
+# string -> Hash;
+# other -> STL_useful;
 
 echo "\documentclass[a4paper, 10pt]{article}
 \usepackage[a4paper, left=3mm, right=3mm, top=19mm, bottom=6mm]{geometry}
@@ -20,7 +25,7 @@ echo "\documentclass[a4paper, 10pt]{article}
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhead{}
-\fancyhead[LO]{~~~MIPT (Barsukov, Porai, Savvateev)}
+\fancyhead[LO]{~~~MIPT (Porai, Savvateev)}
 \fancyhead[RO]{Page \thepage\;of 50~~~}
 \fancyfoot{}
 \begin{document}
